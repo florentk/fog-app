@@ -38,6 +38,7 @@
 
 #endif
 
+#include <unistd.h>
 #include <cstdio>
 #include <cstring>
 #include <cstdarg>

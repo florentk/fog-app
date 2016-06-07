@@ -1,0 +1,1 @@
+./configure --with-xerces-libraries=/usr/local/lib --with-xerces-includes=/usr/local/include/xercesc --enable-debug

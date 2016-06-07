@@ -153,11 +153,11 @@ checkOptions()
 int main(int argc, char **argv)
 {
     OptionsCont &oc = OptionsCont::getOptions();
-    oc.setApplicationDescription("iTETRIS Community ITS Cooperative Demo App");
+    oc.setApplicationDescription("Fog app for iTetris");
 #ifdef WIN32
-    oc.setApplicationName("demoapp.exe", "ITS Cooperative Demo App");
+    oc.setApplicationName("itsfogapp.exe", "Fog app for iTetris");
 #else
-    oc.setApplicationName("demoapp", "ITS Cooperative Demo App " + (string)PACKAGE_VERSION);
+    oc.setApplicationName("itsfogapp", "Fog app for iTetris " + (string)PACKAGE_VERSION);
 #endif
 
     int ret = 0;
