@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<wifi>
+
+  <ipConfiguration>
+    <ip address="10.1.0.0" mask="255.255.0.0"/>
+  </ipConfiguration>
+  
+</wifi>

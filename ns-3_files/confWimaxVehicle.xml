@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Wimax>
+
+   <WimaxPhy>
+    <phy attribute="Frequency" value="3500000000"/>
+    <phy attribute="Bandwidth" value="20000000"/>
+    <phy attribute="TxPower" value="30"/>
+    <phy attribute="TxGain" value="0"/>
+    <phy attribute="RxGain" value="0"/>
+    <phy attribute="NoiseFigure" value="5"/>
+    <phy attribute="CoverageRange" value="5000"/>
+    <phy attribute="BSAntennaHeight" value="30"/>
+    <phy attribute="SSAntennaHeight" value="1.5"/>
+  </WimaxPhy>
+   
+  <applications>  
+   <application> 
+     <WimaxApp itetrisName="serviceIdUnicast"/>       
+     <WimaxApp attribute="PortIP" value="70"/>  
+     <WimaxApp attribute="Frequency" value="2"/>  
+     <WimaxApp attribute="PacketSize" value="30"/>              
+   </application>
+   <application> 
+     <WimaxApp itetrisName="serviceIdBroadcast"/>       
+     <WimaxApp attribute="PortIP" value="72"/>  
+     <WimaxApp attribute="Frequency" value="2"/>  
+     <WimaxApp attribute="PacketSize" value="300"/>              
+   </application> 
+  </applications>
+    
+</Wimax>

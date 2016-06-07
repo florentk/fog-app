@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<umtsVehicle>
+
+   <UmtsPhy name="NodeUE">
+    <phy attribute="AntennaHeight" value="2.0"/>
+    <phy attribute="AntennaGain" value="2.0"/>
+    <phy attribute="SystemLoss" value="0"/>
+    <phy attribute="DedicatedTxPower" value="-15"/>
+    <phy attribute="TxFrequency" value="2000000000"/>
+    <phy attribute="CommonTxPower" value="-21"/>
+    <phy attribute="MinDistance" value="15"/>    
+    <phy attribute="TargetSNR" value="100"/>
+    <phy attribute="PowerControlStep" value="step1"/>    
+  </UmtsPhy>
+  
+    <ipConfiguration>
+    <ip address="10.1.4.1" mask="255.255.255.0"/>
+  </ipConfiguration>
+  
+  <applications> 
+    <application> 
+      <UmtsApp itetrisName="serviceIdUnicast"/>       
+      <UmtsApp attribute="PortIP" value="7080"/>  
+      <UmtsApp attribute="Frequency" value="2"/>  
+      <UmtsApp attribute="PacketSize" value="30"/>  
+      <UmtsApp attribute="ApplicationType" value="UM-NON_FRAG"/>               
+    </application> 
+    <application> 
+      <UmtsApp itetrisName="serviceIdBroadcast"/>       
+      <UmtsApp attribute="PortIP" value="7090"/>  
+      <UmtsApp attribute="Frequency" value="2"/>  
+      <UmtsApp attribute="PacketSize" value="30"/>  
+      <UmtsApp attribute="ApplicationType" value="BROADCAST"/>              
+    </application> 
+  </applications>
+  
+  
+</umtsVehicle>

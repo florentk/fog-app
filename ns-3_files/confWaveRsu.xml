@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<waveVehicle>
+ 
+    <yansWifiPhy>
+      <wavePhyCCH attribute="TxGain" value="0.0"/>
+      <wavePhyCCH attribute="RxGain" value="0.0"/>
+      <wavePhyCCH attribute="TxPowerLevels" value="60"/>
+      <wavePhyCCH attribute="TxPowerEnd" value="33"/>
+      <wavePhyCCH attribute="TxPowerStart" value="20"/> <!-- Actual txon power (dBm)-->
+      <wavePhySCH attribute="TxGain" value="0.0"/>
+      <wavePhySCH attribute="RxGain" value="0.0"/>
+      <wavePhySCH attribute="TxPowerLevels" value="60"/>
+      <wavePhySCH attribute="TxPowerEnd" value="33"/>
+      <wavePhySCH attribute="TxPowerStart" value="20"/>    
+    </yansWifiPhy>
+    
+    <mobilityModel>
+      <antenna attribute="AntennaHeight" value="6"/>     
+    </mobilityModel>
+  
+    <applications>
+    <application>  
+      <C2CIP itetrisName="serviceIdUnicast"/> 
+      <C2CIP attribute="PortC2C" value="7090"/>  
+      <C2CIP attribute="PortIP" value="7091"/>  
+      <C2CIP attribute="Frequency" value="2"/>  
+      <C2CIP attribute="PacketSize" value="300"/>  
+    </application> 
+    <application> 
+      <C2CIP itetrisName="serviceIdTopobroadcast"/> 
+      <C2CIP attribute="PortC2C" value="8083"/>  
+      <C2CIP attribute="PortIP" value="8082"/>  
+      <C2CIP attribute="Frequency" value="2"/>  
+      <C2CIP attribute="PacketSize" value="300"/>  
+    </application> 
+    <application> 
+      <C2CIP itetrisName="serviceIdGeobroadcast"/> 
+      <C2CIP attribute="PortC2C" value="9085"/>  
+      <C2CIP attribute="PortIP" value="9084"/>  
+      <C2CIP attribute="Frequency" value="2"/>  
+      <C2CIP attribute="PacketSize" value="300"/>  
+    </application>     
+  </applications>
+    
+</waveVehicle>

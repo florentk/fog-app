@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<umtsVehicle>
+
+   <DvbhOfdm name="NodeUE">
+    <ofdm attribute="AntennaHeight" value="2.0"/>
+    <ofdm attribute="AntennaGain" value="2.0"/>
+    <ofdm attribute="SystemLoss" value="0"/>
+    <ofdm attribute="Shadowing" value="5"/>
+    <ofdm attribute="TxPower" value="-15"/>
+    <ofdm attribute="TxFrequency" value="1300"/>    
+    <ofdm attribute="MinDistance" value="1000"/>        
+    <ofdm attribute="TotalInterference" value="-70"/>    
+    
+  </DvbhOfdm>
+   <applications>  
+    <application> 
+      <DvbhApp itetrisName="Unicast"/>       
+      <DvbhApp attribute="PortIP" value="8080"/>  
+      <DvbhApp attribute="ApplicationType" value="BROADCAST"/> 
+      <DvbhApp attribute="ServiceIp" value="255.255.255.255"/>
+      <DvbhApp attribute="ServiceId" value="10"/>	    
+    </application> 
+  </applications>
+  
+</umtsVehicle>
