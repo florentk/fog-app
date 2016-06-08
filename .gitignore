@@ -1,0 +1,15 @@
+Makefile*
+*.a
+*.o
+config*
+.deps*
+*log*.txt
+*.cache
+*.m4
+stamp*
+src/itsfogapp
+depcomp
+missing
+install-sh
+compile
+libtool

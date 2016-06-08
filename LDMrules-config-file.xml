@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<LDMrules>
+
+    <defaultMessageLifeInterval value="5" />	<!-- Value expressed in simulation steps -->
+
+	<relevantStationTypes fixed="1" mobile="1" /> <!-- 1=TRUE, 0=FALSE -->
+
+	<relevantMessages cam="1" denm="1" topobroadcast="1" geobroadcast="1" geoanycast="1" unicast="1" multicast="1"/> <!-- 1=TRUE, 0=FALSE -->
+
+</LDMrules>
+
+
+<!-- RELEVANT DIRECTION
+	<relevantDirection radiansFromNorth="0.4" accuracy="0.5" />
+-->
+
+<!-- RELEVANCE AREA EXAMPLES: Definition of the RoadElement variables
+
+<relevantArea>
+
+	<circle
+		centerX="" centerY="" centerLat="" centerLon="" radius=""
+	/>
+
+	<ellipse
+		focus1X="" focus1Y="" [focus1Lat="" focus1Lon=""]
+		focus2X="" focus2Y="" [focus2Lat="" focus2Lon=""]
+		eccentricity=""
+		centerX="" centerY="" [centerLat="" centerLon=""]
+		majorAxis=""
+		minorAxis=""
+		rotationAngleRadians=""
+	/>
+
+	<rectangle
+		vertexAX="" vertexAY="" [vertexALat="" vertexALon=""]
+		vertexBX="" vertexBY="" [vertexBLat="" vertexBLon=""]
+		vertexCX="" vertexCY="" [vertexCLat="" vertexCLon=""]
+		vertexDX="" vertexDY="" [vertexDLat="" vertexDLon=""]
+		centerX="" centerY="" [centerLat="" centerLon=""]
+		pointAX="" pointAY="" [pointALat="" pointALon=""]
+		pointBX="" pointBY="" [pointBLat="" pointBLon=""]
+		height=""
+	/>
+
+	<convexPolygon>
+		<vertex X="" Y="" [Lat="" Lon=""] />
+		<vertex X="" Y="" [Lat="" Lon=""] />
+		<vertex X="" Y="" [Lat="" Lon=""] />
+		<vertex X="" Y="" [Lat="" Lon=""] />
+		<vertex X="" Y="" [Lat="" Lon=""] />
+	</convexPolygon>
+
+	<lanes>
+		<lane ID="">
+		<lane ID="">
+	</lanes>
+
+	<edges>
+		<edge ID="">
+		<edge ID="">
+	</edges>
+
+	<junctions>
+		<junction ID="">
+		<junction ID="">
+	</junctions>
+
+</relevantArea>
+
+-->
+

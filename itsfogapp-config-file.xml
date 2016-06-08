@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.sf.net/xsd/demoappConfiguration.xsd">
+
+    <general>
+        <start value="10"/>
+        <socket value="1986"/>
+        <logfile value="itsfogapplogfile.txt"/>
+    </general>
+
+    <camareasubscription>
+        <xcam value="290"/>
+        <ycam value="255"/>
+        <radiuscam value="1000"/>
+    </camareasubscription>
+
+    <returningcarareasubscription>
+        <xcar value="290"/>
+        <ycar value="255"/>
+        <radiuscar value="1000"/>
+    </returningcarareasubscription>
+
+</configuration>

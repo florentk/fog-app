@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<facilities>
+	<localCoordinates latitude="44.494218" longitude="11.346486" altitude="0.0"/>	
+	<mapConfig mapConFilename="./network/highway.net.xml"/>
+	<stationsConfig stationsConFilename="stations-config-file.xml" />
+	<LDMrulesConfig LDMrulesConFilename="LDMrules-config-file.xml" />
+</facilities>
