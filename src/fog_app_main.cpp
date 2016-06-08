@@ -42,8 +42,7 @@ fillOptions()
 {
     OptionsCont &oc = OptionsCont::getOptions();
     oc.clearCopyrightNotices();
-    oc.addCopyrightNotice("(c) iTETRIS consortium 2008-2010; http://www.ict-itetris.eu/");
-    oc.addCopyrightNotice("   (c) DLR 2001-2010; http://sumo.sf.net");
+    oc.addCopyrightNotice("(c) Florent Kaisser 2016");
     oc.addCallExample("-c <CONFIGURATION>");
 
     // insert options sub-topics
@@ -51,6 +50,8 @@ fillOptions()
     oc.addOptionSubTopic("General");
     oc.addOptionSubTopic("CamAreaSubscription");
     oc.addOptionSubTopic("ReturningCarAreaSubscription");
+    oc.addOptionSubTopic("FogArea");
+    oc.addOptionSubTopic("Alert");         
     SystemFrame::addReportOptions(oc);
 
     oc.doRegister("start", 's' , new Option_Integer(0));
@@ -79,6 +80,31 @@ fillOptions()
 
     oc.doRegister("radiuscar", new Option_Float());
     oc.addDescription("radiuscar", "ReturningCarAreaSubscription", "Defines radius of the area to return cars Subscription");
+    
+    //Specific Fog application
+    oc.doRegister("xfog", new Option_Float());
+    oc.addDescription("xfog", "FogArea", "Defines X base point of the area of fog");
+
+    oc.doRegister("yfog", new Option_Float());
+    oc.addDescription("yfog", "FogArea", "Defines Y base point of the area of fog");
+
+    oc.doRegister("radiusfog", new Option_Float());
+    oc.addDescription("radiusfog", "FogArea", "Defines radius of the area of fog"); 
+    
+    oc.doRegister("startfog", new Option_Integer());
+    oc.addDescription("startfog", "FogArea", "Defines the begin time of fog");  
+    
+    oc.doRegister("endfog", new Option_Integer());
+    oc.addDescription("endfog", "FogArea", "Defines the end time of fog");           
+    
+    oc.doRegister("radiusalert", new Option_Float());
+    oc.addDescription("radiusalert", "Alert", "Defines radius of the alert");  
+     
+    oc.doRegister("timeoutalert", new Option_Integer());
+    oc.addDescription("timeoutalert", "Alert", "Defines the timeout of a alert");       
+    
+    oc.doRegister("alertspeedlimit", new Option_Float());
+    oc.addDescription("alertspeedlimit", "Alert", "Defines the speed limit on alert");             
 }
 
 /* -------------------------------------------------------------------------
@@ -90,60 +116,100 @@ checkOptions()
     bool ret = true;
     OptionsCont &oc = OptionsCont::getOptions();
 
-    // check last time step
+    
     if (!oc.isSet("start")) {
         MsgHandler::getErrorInstance()->inform("Missing ITS start time step");
         ret = false;
     }
 
-    // check last time step
+    
     if (!oc.isSet("socket")) {
         MsgHandler::getErrorInstance()->inform("Missing socket port number");
         ret = false;
     }
 
-    // check last time step
+    
     if (!oc.isSet("logfile")) {
         MsgHandler::getErrorInstance()->inform("Missing log file path");
         ret = false;
     }
 
-    // check last time step
+    
     if (!oc.isSet("xcam")) {
         MsgHandler::getErrorInstance()->inform("Missing X base point for the CAM area subscription");
         ret = false;
     }
 
-    // check last time step
+    
     if (!oc.isSet("ycam")) {
         MsgHandler::getErrorInstance()->inform("Missing Y base point for the CAM area subscription");
         ret = false;
     }
 
-    // check last time step
+    
     if (!oc.isSet("radiuscam")) {
         MsgHandler::getErrorInstance()->inform("Missing radius for the CAM area subscription.");
         ret = false;
     }
 
-    // check last time step
+    
     if (!oc.isSet("xcar")) {
         MsgHandler::getErrorInstance()->inform("Missing X base point for the returning car area subscription.");
         ret = false;
     }
 
-    // check last time step
+    
     if (!oc.isSet("ycar")) {
         MsgHandler::getErrorInstance()->inform("Missing Y base point for the returning car area subscription.");
         ret = false;
     }
 
-    // check last time step
+    
     if (!oc.isSet("radiuscar")) {
         MsgHandler::getErrorInstance()->inform("Missing radius for the returning car area subscription.");
         ret = false;
+    }   
+    
+    if (!oc.isSet("xfog")) {
+        MsgHandler::getErrorInstance()->inform("Missing X base point of the area of fog.");
+        ret = false;
     }
-
+    
+    if (!oc.isSet("yfog")) {
+        MsgHandler::getErrorInstance()->inform("Missing Y base point of the area of fog.");
+        ret = false;
+    }
+    
+    if (!oc.isSet("radiusfog")) {
+        MsgHandler::getErrorInstance()->inform("Missing radius of the area of fog.");
+        ret = false;
+    }
+    
+    if (!oc.isSet("startfog")) {
+        MsgHandler::getErrorInstance()->inform("Missing the begin time of fog.");
+        ret = false;
+    }
+    
+    if (!oc.isSet("endfog")) {
+        MsgHandler::getErrorInstance()->inform("Missing the end time of fog.");
+        ret = false;
+    }
+    
+    if (!oc.isSet("radiusalert")) {
+        MsgHandler::getErrorInstance()->inform("Missing radius of the alert.");
+        ret = false;
+    }
+    
+    if (!oc.isSet("timeoutalert")) {
+        MsgHandler::getErrorInstance()->inform("Missing the timeout of a alert.");
+        ret = false;
+    }
+    
+    if (!oc.isSet("alertspeedlimit")) {
+        MsgHandler::getErrorInstance()->inform("Missing the speed limit on alert.");
+        ret = false;
+    }
+    
     return ret;
 }
 
@@ -176,7 +242,7 @@ int main(int argc, char **argv)
         //  message handler start-up
         MsgHandler::initOutputOptions(true);
 
-        MsgHandler::getMessageInstance()->inform("Starting iTETRIS ITS Cooperative Demo Application");
+        MsgHandler::getMessageInstance()->inform("Starting Fog application for iTetris");
 
         //  options verification
         if (!checkOptions()) throw ProcessError();
@@ -184,7 +250,7 @@ int main(int argc, char **argv)
         // Initialize log file
         std::string logfile =  oc.getString("logfile");
         Log::StartLog(logfile.c_str());
-        Log::WriteHeader("iTETRIS ITS COOPERATIVE DEMO APP LOG FILE");
+        Log::WriteHeader("FOG APPLICATION LOG FILE");
 
         // Set Application start time step
         if (ApplicationLogic::SetApplicationStartTimeStep(oc.getInt("start")) == EXIT_FAILURE) throw ProcessError("Start is negative");
@@ -194,6 +260,18 @@ int main(int argc, char **argv)
 
         // Set desired returning car area user values
         if (ApplicationLogic::SetCarArea(oc.getFloat("xcar"), oc.getFloat("ycar"), oc.getFloat("radiuscar")) == EXIT_FAILURE) throw ProcessError();
+
+
+        // Set desired returning values for fog application specific 
+        if (ApplicationLogic::SetFogArea(oc.getFloat("xfog"), oc.getFloat("yfog"), oc.getFloat("radiusfog")) == EXIT_FAILURE) throw ProcessError();
+        if (ApplicationLogic::SetFogStartTimeStep(oc.getInt("startfog")) == EXIT_FAILURE) throw ProcessError();        
+        if (ApplicationLogic::SetFogEndTimeStep(oc.getInt("endfog")) == EXIT_FAILURE) throw ProcessError();
+        if (ApplicationLogic::SetAlertRadius(oc.getFloat("radiusalert")) == EXIT_FAILURE) throw ProcessError();
+        if (ApplicationLogic::SetAlertTimeOut(oc.getInt("timeoutalert")) == EXIT_FAILURE) throw ProcessError();
+        if (ApplicationLogic::SetAlertSpeedlimit(oc.getFloat("alertspeedlimit")) == EXIT_FAILURE) throw ProcessError();
+        
+       
+
 
         // Start the server
         Server::processCommands(oc.getInt("socket"));

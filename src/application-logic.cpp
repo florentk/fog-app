@@ -44,10 +44,16 @@ bool ApplicationLogic::m_returnCarAreaIsSet = false;
 vector<Vehicle> ApplicationLogic::m_vehiclesInArea;
 vector<AppMessage> ApplicationLogic::m_messages;
 map<int,bool> ApplicationLogic::m_carRxSubs;
-int ApplicationLogic::m_messageCounter = 5;
+int ApplicationLogic::m_messageCounter = 0;
 Area ApplicationLogic::m_camArea;
 Area ApplicationLogic::m_carArea;
 int ApplicationLogic::m_appStartTimeStep;
+Area ApplicationLogic::m_fogArea;        
+int ApplicationLogic::m_fogStartTimeStep;
+int ApplicationLogic::m_fogEndTimeStep;    
+float ApplicationLogic::m_alertRadius;
+int ApplicationLogic::m_alertTimeOut; 
+float ApplicationLogic::m_alertSpeedlimit;    
 
 // ===========================================================================
 // method definitions
@@ -165,7 +171,7 @@ ApplicationLogic::ProcessReceptionOfApplicationMessage(vector<AppMessage>& messa
         for (vector<AppMessage>::iterator it_ = m_messages.begin(); it_ != m_messages.end() ; ++it_) {
             int inputId = (*it).messageId; // received from the subscription
             int registeredId = (*it_).messageId; // id registered by App
-            TrafficApplicationResultMessageState status =  (*it_).status;
+            //TrafficApplicationResultMessageState status =  (*it_).status;
             
             if ((inputId == registeredId)/* && (status == kScheduled || status == kToBeApplied)*/) {
                 stringstream log;
@@ -224,7 +230,10 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
   tcpip::Storage mySubsStorage;
 
   for (vector<AppMessage>::iterator it_ = m_messages.begin(); it_ != m_messages.end() ; ++it_) {
-       if (((*it_).status == kToBeScheduled) && ((*it_).senderId == nodeId)) { // we need to send an APP_MSG_SEND and it should be a subscription created by me
+       //if no message received by nodeId => not process the message
+       if ( ! msgIsReceivedByNode(*it_, nodeId) ) continue;
+  
+       if (((*it_).status == kToBeScheduled)/*  ((*it_).senderId == nodeId)*/) { // we need to send an APP_MSG_SEND and it should be a subscription created by me
            
            (*it_).status = kScheduled;  // changed from kToBeScheduled to kScheduled
           
@@ -233,28 +242,28 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
            Log::Write((log.str()).c_str(), kLogLevelInfo); 
 
            //Command length
-	   mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 1 + 1 + 4 + 1 + 2 + 4 + 1 + 1 + 1 + 1 + 4+ 4 + 4);
-	   //Command type
-	   mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
-	   mySubsStorage.writeUnsignedByte(SUB_APP_MSG_SEND);
-	   mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE 
-           // This demo-app only sends one type of message (to stop a vehicles): the code is 0x01 ; if we need to send another type, please change to a different number
-	   mySubsStorage.writeUnsignedByte(0x0F);  // in bits, it is: 1111 : comm profile, the prefered techno and a senderID and the message lifetime
-	   mySubsStorage.writeUnsignedByte(0xFF);  // unsigned char preferredRATs = 0xFF;
-	   mySubsStorage.writeUnsignedByte(0xFF);  // unsigned char commProfile = 0xFF;
-	   mySubsStorage.writeInt((*it_).senderId);
-	   mySubsStorage.writeUnsignedByte(2);     // unsigned int msgLifetime = 2;
-           mySubsStorage.writeShort(1024); // m_app_Msg_length
-	   mySubsStorage.writeInt((*it_).messageId); //sequence number
-	   mySubsStorage.writeUnsignedByte(EXT_HEADER_TYPE_GEOBROADCAST); // CommMode
-	   mySubsStorage.writeUnsignedByte(EXT_HEADER__VALUE_BLOCK_AREAs); // CommMode
-	   mySubsStorage.writeUnsignedByte(1);
-	   /*mySubsStorage.writeInt((*it_).destinationId);*/
-	   
-	   mySubsStorage.writeUnsignedByte(EXT_HEADER__CIRCLE); //Area type 
-	   mySubsStorage.writeFloat(290.0); //x
-	   mySubsStorage.writeFloat(255.0); //y
-	   mySubsStorage.writeFloat(25.0);	//radius   		           
+	       mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 1 + 1 + 4 + 1 + 2 + 4 + 1 + 1 + 1 + 1 + 4+ 4 + 4);
+	       //Command type
+	       mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
+	       mySubsStorage.writeUnsignedByte(SUB_APP_MSG_SEND);
+	       mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE 
+               // This demo-app only sends one type of message (to stop a vehicles): the code is 0x01 ; if we need to send another type, please change to a different number
+	       mySubsStorage.writeUnsignedByte(0x0F);  // in bits, it is: 1111 : comm profile, the prefered techno and a senderID and the message lifetime
+	       mySubsStorage.writeUnsignedByte(0xFF);  // unsigned char preferredRATs = 0xFF;
+	       mySubsStorage.writeUnsignedByte(0xFF);  // unsigned char commProfile = 0xFF;
+	       mySubsStorage.writeInt((*it_).senderId);
+	       mySubsStorage.writeUnsignedByte(2);     // unsigned int msgLifetime = 2;
+               mySubsStorage.writeShort(1024); // m_app_Msg_length
+	       mySubsStorage.writeInt((*it_).messageId); //sequence number
+	       mySubsStorage.writeUnsignedByte(EXT_HEADER_TYPE_GEOBROADCAST); // CommMode
+	       mySubsStorage.writeUnsignedByte(EXT_HEADER__VALUE_BLOCK_AREAs); // CommMode
+	       mySubsStorage.writeUnsignedByte(1);
+	       /*mySubsStorage.writeInt((*it_).destinationId);*/
+	       
+	       mySubsStorage.writeUnsignedByte(EXT_HEADER__CIRCLE); //Area type 
+	       mySubsStorage.writeFloat(m_fogArea.x); //x
+	       mySubsStorage.writeFloat(m_fogArea.y); //y
+	       mySubsStorage.writeFloat(m_fogArea.radius + m_alertRadius);	//radius   		           
 
            break;  // we break on each successful occurence, as the iCS can only read ONE subscription at a time..we will be called again by the iCS as long as we have something to request
        }
@@ -265,6 +274,26 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
            log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Message " << (*it_).messageId << " on " << nodeId << " is changed status from kToBeApplied to kApplied";
            Log::Write((log.str()).c_str(), kLogLevelInfo); 
            
+           for (vector<int>::iterator itDestIds = (*it_).receivedIds.begin(); itDestIds != (*it_).receivedIds.end() ; ++itDestIds) {
+                   int destinationId = (*itDestIds);
+                   //itDestIds=(*it_).receivedIds.erase(itDestIds);
+           
+                   //Command length
+	           mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 4);
+	           //Command type
+	           mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
+	           mySubsStorage.writeUnsignedByte(SUB_APP_CMD_TRAFF_SIM);
+	           mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE
+	           mySubsStorage.writeUnsignedByte(VALUE_SET_SPEED); //to change the speed
+	           mySubsStorage.writeInt(destinationId); //Destination node to set its maximum speed.
+	           mySubsStorage.writeFloat(m_alertSpeedlimit); //Set Maximum speed
+	           
+	           stringstream log;
+                   log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " slowed !";
+                   Log::Write((log.str()).c_str(), kLogLevelInfo); 
+            }
+	   }else if ( (*it_).status == kApplied && AlertIsExpired(*it_,timestep)){
+	       //Restore initial speed limit
            for (vector<int>::iterator itDestIds = (*it_).receivedIds.begin(); itDestIds != (*it_).receivedIds.end() ; ) {
                    int destinationId = (*itDestIds);
                    itDestIds=(*it_).receivedIds.erase(itDestIds);
@@ -277,32 +306,13 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
 	           mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE
 	           mySubsStorage.writeUnsignedByte(VALUE_SET_SPEED); //to change the speed
 	           mySubsStorage.writeInt(destinationId); //Destination node to set its maximum speed.
-	           mySubsStorage.writeFloat(0.0); //Set Maximum speed
+	           mySubsStorage.writeFloat(SPEED_LIMIT); //Set Maximum speed
 	           
 	           stringstream log;
-                   log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " slowed !";
+                   log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " speed restored !";
                    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+            }	   
 	   }
-           break;
-     }
-    /* else if (((*it_).status == kApplied) && ((*it_).senderId == SENDER_ID)) { // we need to send an APP_CMD_TRAFFIC_SIM subscription
-           (*it_).status = kToBeDiscarded;  // changed from kToBeApplied to kApplied 
-           stringstream log;
-           log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Message " << (*it_).messageId << " is changed status from kToBeApplied to kApplied";
-           Log::Write((log.str()).c_str(), kLogLevelInfo); 
-           
-           //Command length
-	   mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 1 + 4);
-	   //Command type
-	   mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
-	   mySubsStorage.writeUnsignedByte(SUB_X_APPLICATION_DATA);
-	   mySubsStorage.writeUnsignedByte(VALUE_GET_DATA_BY_RESULT_CONTAINER_ID); //to change the speed
-	   mySubsStorage.writeUnsignedByte(SPEED);
-	   ostringstream os;
-           os << 2;  // we ask for the speed saved by RSU for node 2 on the ResultContainer of the RSU
-           mySubsStorage.writeString(os.str());
-           break;
-     }*/
   }
   return  mySubsStorage;
 }
@@ -312,56 +322,86 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
 vector<AppMessage>
 ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
 {
-
-        int end = m_appStartTimeStep + 200;
-
-
-
-    vector<AppMessage> results;
-   // TODO: remove the hardcoded RSU ID
-   if (timestep >= m_appStartTimeStep && timestep < end && senderId == SENDER_ID) {  // restrict the command to the RSU only (ID RSU is 5000)
+   vector<AppMessage> results;
+   if (     timestep >= m_appStartTimeStep 
+       &&   FogIsActive(timestep) 
+       &&   IsInFog(senderId)) { 
         // Loop vehicles in the area, one message per vehicle
         stringstream log;  
         
         log << "APP --> [ApplicationLogic] SendBackExecutionResults() creating new messages for ID "<< senderId << " for vehicles..." ;
            
-        //for (vector<Vehicle>::const_iterator it = m_vehiclesInArea.begin() ; it != m_vehiclesInArea.end() ; it++) {
-            AppMessage message;
-            message.messageId = ++m_messageCounter;
-            message.status = kToBeScheduled;  // JHNOTE: registers a APP_MSG_Sends subscription 
-            message.senderId = senderId;
-            message.destinationId = 0/*(*it).id*/;
-            message.createdTimeStep = timestep;
-            message.payloadValue = 0; // we make the vehicle STOP !!
-            //message.payloadValue = (*it).speed + 10; // alternatively, we could also change its speed...
-            log<< " ID " << message.destinationId << " with new speed " << message.payloadValue<< " Message is now kToBeScheduled ";
-            m_messages.push_back(message);
-        //}
+
+        AppMessage message;
+        message.messageId = ++m_messageCounter;
+        message.status = kToBeScheduled;  // JHNOTE: registers a APP_MSG_Sends subscription 
+        message.senderId = senderId;
+        message.destinationId = 0; //broadcast !
+        message.createdTimeStep = timestep;
+        message.payloadValue = m_alertSpeedlimit; 
+        log<< " ID " << message.destinationId << " with new speed " << message.payloadValue<< " Message is now kToBeScheduled ";
+        m_messages.push_back(message);
+
         Log::Write((log.str()).c_str(), kLogLevelInfo); 
 
         // Keep in safe place all the results to send back to the iCS
         results = m_messages;
-
-        // Loop current messages to find those to be applied and erase from the result record
-        for (vector<AppMessage>::iterator it = m_messages.begin() ; it != m_messages.end() ; it++) {
-            //if ((*it).status == kApplied) {  
-              if ((*it).status == kToBeDiscarded) {
-		m_messages.erase(it);
-                stringstream log;
+    }
+    
+    // Loop current messages to find those to be applied and erase from the result record
+    for (vector<AppMessage>::iterator it = m_messages.begin() ; it != m_messages.end() ; it++) {
+        //if ((*it).status == kApplied) {  
+        if ((*it).status == kToBeDiscarded) {
+            m_messages.erase(it);
+            stringstream log;
            	log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Message " << (*it).messageId << " was kApplied...has been removed, as the cycle is now complete.";
           	Log::Write((log.str()).c_str(), kLogLevelInfo); 
-             
-            }
         }
     }
 
     return results;
 }
 
+bool 
+ApplicationLogic::AlertIsExpired(AppMessage& msg, int timestep){
+    return msg.status == kApplied && (timestep > msg.createdTimeStep+m_alertTimeOut);
+}
+
+bool 
+ApplicationLogic::FogIsActive(int timestep){
+    return (m_fogStartTimeStep <= timestep) && (timestep < m_fogEndTimeStep);
+}
+
+bool
+ApplicationLogic::IsInFog(int idNode){
+
+    for (vector<Vehicle>::const_iterator it = m_vehiclesInArea.begin() ; it != m_vehiclesInArea.end() ; it++) {
+        if ((*it).id == idNode)
+            return true;
+    }
+    
+    return false;
+}
+
+bool
+ApplicationLogic::msgIsReceivedByNode(AppMessage& msg, int idNode){
+
+    for (vector<int>::const_iterator itDestIds = msg.receivedIds.begin() ; itDestIds != msg.receivedIds.end() ; itDestIds++) {
+        if ((*itDestIds) == idNode)
+            return true;
+    }
+    
+    return false;
+}
 
 int
 ApplicationLogic::SetCamArea(float x, float y, float radius)
 {
+
+stringstream log;
+    log << "CAM Area : " << "(" << x << "," << y << "," << radius << ")";
+    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
     if (radius <= 0) {
         Log::Write("Radius of the CAM area is 0 or negative.", kLogLevelError);
         return EXIT_FAILURE;
@@ -377,6 +417,10 @@ ApplicationLogic::SetCamArea(float x, float y, float radius)
 int
 ApplicationLogic::SetCarArea(float x, float y, float radius)
 {
+    stringstream log;
+    log << "Car Area : " << "(" << x << "," << y << "," << radius << ")";
+    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
     if (radius <= 0) {
         Log::Write("Radius of the returning car area is 0 or negative.", kLogLevelError);
         return EXIT_FAILURE;
@@ -392,6 +436,10 @@ ApplicationLogic::SetCarArea(float x, float y, float radius)
 int
 ApplicationLogic::SetApplicationStartTimeStep(int timestep)
 {
+    stringstream log;
+    log << "Start time : " << timestep;
+    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
     if (timestep < 0) {
         Log::Write("Application start time step is negative", kLogLevelError);
         return EXIT_FAILURE;
@@ -401,3 +449,101 @@ ApplicationLogic::SetApplicationStartTimeStep(int timestep)
 
     return EXIT_SUCCESS;
 }
+
+
+int ApplicationLogic::SetFogArea(float x, float y, float radius)
+{
+    stringstream log;
+    log << "Fog Area : " << "(" << x << "," << y << "," << radius << ")";
+    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
+    if (radius <= 0) {
+        Log::Write("Radius of the returning fog area is 0 or negative.", kLogLevelError);
+        return EXIT_FAILURE;
+    }
+
+    m_fogArea.x = x;
+    m_fogArea.y = y;
+    m_fogArea.radius = radius;
+    return EXIT_SUCCESS;     
+}
+
+int ApplicationLogic::SetFogStartTimeStep(int timestep)
+{
+    stringstream log;
+    log << "Start fog time : " << timestep;
+    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
+    if (timestep < 0) {
+        Log::Write("Fog start time step is negative", kLogLevelError);
+        return EXIT_FAILURE;
+    }
+
+    m_fogStartTimeStep = timestep;
+    return EXIT_SUCCESS;     
+}    
+
+int ApplicationLogic::SetFogEndTimeStep(int timestep)
+{
+    stringstream log;
+    log << "End fog time : " << timestep;
+    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
+    if (timestep < 0) {
+        Log::Write("Fog over time step is negative", kLogLevelError);
+        return EXIT_FAILURE;
+    }
+    
+    m_fogEndTimeStep = timestep;
+    return EXIT_SUCCESS;     
+}        
+
+int ApplicationLogic::SetAlertRadius(float radius)
+{
+    stringstream log;
+    log << "Alert radius : " << radius;
+    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
+    if (radius <= 0) {
+        Log::Write("Radius of alert is 0 or negative.", kLogLevelError);
+        return EXIT_FAILURE;
+    }
+    
+    m_alertRadius = radius;
+
+    return EXIT_SUCCESS;     
+}    
+
+int ApplicationLogic::SetAlertTimeOut(int alerttimeout)
+{
+    stringstream log;
+    log << "Alert timeout : " << alerttimeout;
+    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
+    if (alerttimeout < 0) {
+        Log::Write("Alert time out is negative", kLogLevelError);
+        return EXIT_FAILURE;
+    }
+    
+    m_alertTimeOut = alerttimeout;
+
+    return EXIT_SUCCESS;     
+}     
+
+int ApplicationLogic::SetAlertSpeedlimit(float alertspeedlimit)
+{
+    stringstream log;
+    log << "Alert speed limit : " << alertspeedlimit;
+    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
+    if (alertspeedlimit < 0) {
+        Log::Write("Alert speed limit is negative", kLogLevelError);
+        return EXIT_FAILURE;
+    }
+    
+    m_alertSpeedlimit = alertspeedlimit;
+
+    return EXIT_SUCCESS;     
+}       
+
+

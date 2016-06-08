@@ -3,21 +3,38 @@
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.sf.net/xsd/demoappConfiguration.xsd">
 
     <general>
-        <start value="10"/>
+        <start value="50"/>
         <socket value="1986"/>
         <logfile value="itsfogapplogfile.txt"/>
     </general>
 
     <camareasubscription>
-        <xcam value="290"/>
-        <ycam value="255"/>
-        <radiuscam value="1000"/>
+        <xcam value="5000"/>
+        <ycam value="50"/>
+        <radiuscam value="5000"/>
     </camareasubscription>
 
     <returningcarareasubscription>
-        <xcar value="290"/>
-        <ycar value="255"/>
+        <xcar value="5000"/>
+        <ycar value="50"/>
         <radiuscar value="1000"/>
     </returningcarareasubscription>
+    
+    <fogarea>
+        <xfog value="5000"/>
+        <yfog value="50"/>
+        <radiusfog value="1000"/>
+        <startfog value="70"/>
+        <endfog value="100"/>
+    </fogarea>   
+    
+    
+    <alert>
+      <radiusalert value="500"/>
+      <timeoutalert value="10"/>
+      <alertspeedlimit value="14"/>     
+    </alert>          
+        
+
 
 </configuration>

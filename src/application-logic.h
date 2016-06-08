@@ -12,6 +12,7 @@
 #define APPLICATIONLOGIC_H
 
 #define SENDER_ID 2
+#define SPEED_LIMIT 33
 
 #include "foreign/tcpip/storage.h"
 #include <vector>
@@ -123,15 +124,33 @@ public:
 
     /// @brief Intializes returning car area values
     static int SetCarArea(float x, float y, float radius);
-
+    
+    /// @brief Intializes returning fog area values
+    static int SetFogArea(float x, float y, float radius);   
+    
+    /// @brief Intializes where the alert is propaging
+    static int SetAlertRadius(float radius);
+    
+    /// @brief Intializes the time out of a alert
+    static int SetAlertTimeOut(int alerttimeout); 
+    
+    /// @brief Intializes the speed limit on alert
+    static int SetAlertSpeedlimit(float alertspeedlimit);         
+     
     /// @brief Returns a CAM area
     static Area GetCamArea();
 
     /// @brief Returns the car area
-    static Area GetReturningCarArea();
+    static Area GetReturningCarArea();  
 
     /// @brief Assigns a time step for the app to start returning values
     static int SetApplicationStartTimeStep(int timestep);
+
+    /// @brief Assigns a time step for the fog is active returning values
+    static int SetFogStartTimeStep(int timestep);
+    
+    /// @brief Assigns a time step for the fog is over returning values
+    static int SetFogEndTimeStep(int timestep);    
 
     /// @brief Skeleton to unsubcription. Demo app never requests it
     static bool DropSubscription(int subscriptionType);
@@ -163,6 +182,18 @@ public:
 
 private:
 
+    /// @brief return true if the alert of msg is expired
+    static bool AlertIsExpired(AppMessage& msg, int timestep);
+    
+    /// @brief return true if the fog is active
+    static bool FogIsActive(int timestep);
+    
+    /// @brief return true if the node idNode is in a fog
+    static bool IsInFog(int idNode);
+    
+    /// @brief return true if the node idNode has received the message msg
+    static bool msgIsReceivedByNode(AppMessage& msg, int idNode);
+
     /// @brief CAM area definition
     static Area m_camArea;
 
@@ -171,6 +202,24 @@ private:
 
     /// @brief The time step in which the app will send back results
     static int m_appStartTimeStep;
+    
+    /// @brief Returning fog area definition
+    static Area m_fogArea;        
+    
+    /// @brief The time step in which the fog is active
+    static int m_fogStartTimeStep;
+    
+    /// @brief The time step in which the fog is over
+    static int m_fogEndTimeStep;    
+    
+    /// @brief Radius where the alert is propaging
+    static float m_alertRadius;
+    
+    /// @brief The time out of a alert
+    static int m_alertTimeOut; 
+    
+    /// @brief Speed limit on alert
+    static float m_alertSpeedlimit;           
 };
 
 #endif

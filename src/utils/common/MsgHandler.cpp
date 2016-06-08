@@ -106,7 +106,7 @@ MsgHandler::inform(std::string msg, bool addType)
     msg = build(msg, addType);
     // report to std::cout if wished
     if (myReport2COUT) {
-        std::cout << "ITS DEMO APP --> " << msg << std::endl;
+        std::cout << "ITS FOG APP --> " << msg << std::endl;
     }
     // report to std::cerr if wished
     if (myReport2CERR) {
