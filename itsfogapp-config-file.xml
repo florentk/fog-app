@@ -17,22 +17,22 @@
     <returningcarareasubscription>
         <xcar value="5000"/>
         <ycar value="50"/>
-        <radiuscar value="1000"/>
+        <radiuscar value="500"/>
     </returningcarareasubscription>
     
     <fogarea>
         <xfog value="5000"/>
         <yfog value="50"/>
-        <radiusfog value="1000"/>
-        <startfog value="70"/>
-        <endfog value="100"/>
+        <radiusfog value="500"/>
+        <startfog value="0"/>
+        <endfog value="500"/>
     </fogarea>   
     
     
     <alert>
-      <radiusalert value="500"/>
-      <timeoutalert value="10"/>
-      <alertspeedlimit value="14"/>     
+      <radiusalert value="1000"/>
+      <timeoutalert value="500"/>
+      <alertspeedlimit value="0"/>     
     </alert>          
         
 

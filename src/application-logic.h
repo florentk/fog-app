@@ -102,13 +102,16 @@ class ApplicationLogic
 public:
 
     /// @brief The collection of vehicles in the CAM area
-    static std::vector<Vehicle> m_vehiclesInArea;
+    static std::vector<Vehicle> m_vehiclesInFog;
 
     /// @brief The collection of messages the results travel in
     static std::vector<AppMessage> m_messages;
 
     /// @brief The collection of vehicles, which subscribed to a RX subscription
     static std::map<int, bool> m_carRxSubs;
+    
+     /// @brief The collection of vehicles, which speed changed : pair of (nodeid,time) 
+    static std::map<int, int> m_carLastSpeedChangeTime;   
 
     /// @brief Counter to create different message IDs
     static int m_messageCounter;
@@ -183,7 +186,10 @@ public:
 private:
 
     /// @brief return true if the alert of msg is expired
-    static bool AlertIsExpired(AppMessage& msg, int timestep);
+    static bool AlertIsExpired(int nodeId, int timestep);
+    
+    /// @brief return true if the vehicle is already slowed (current alert)
+    static bool NodeIsSlowed(int nodeId, int timestep);
     
     /// @brief return true if the fog is active
     static bool FogIsActive(int timestep);

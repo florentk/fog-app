@@ -2,7 +2,7 @@
 
     <scenario>
         <begin value="0"/>
-        <end value="200"/>
+        <end value="500"/>
         <penetration-rate value="100"/>                
         <facilities-config-file value="facilities-config-file.xml"/>
 	<message-reception-window value="5"/>

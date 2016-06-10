@@ -3,7 +3,7 @@ Makefile*
 *.o
 config*
 .deps*
-*log*.txt
+*log*.txt*
 *.cache
 *.m4
 stamp*

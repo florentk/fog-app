@@ -41,9 +41,11 @@ using namespace std;
 bool ApplicationLogic::m_camAreaIsSet = false;
 bool ApplicationLogic::m_returnCarAreaIsSet = false;
 
-vector<Vehicle> ApplicationLogic::m_vehiclesInArea;
+vector<Vehicle> ApplicationLogic::m_vehiclesInFog;
 vector<AppMessage> ApplicationLogic::m_messages;
 map<int,bool> ApplicationLogic::m_carRxSubs;
+map<int, int> ApplicationLogic::m_carLastSpeedChangeTime;   
+
 int ApplicationLogic::m_messageCounter = 0;
 Area ApplicationLogic::m_camArea;
 Area ApplicationLogic::m_carArea;
@@ -99,9 +101,9 @@ bool
 ApplicationLogic::ProcessSubscriptionCarsInZone(vector<Vehicle>& vehicles)
 {
     // Erase old data
-    m_vehiclesInArea.clear();
+    m_vehiclesInFog.clear();
     // Assign new data
-    m_vehiclesInArea = vehicles;
+    m_vehiclesInFog = vehicles;
 
     return true;
 }
@@ -171,9 +173,9 @@ ApplicationLogic::ProcessReceptionOfApplicationMessage(vector<AppMessage>& messa
         for (vector<AppMessage>::iterator it_ = m_messages.begin(); it_ != m_messages.end() ; ++it_) {
             int inputId = (*it).messageId; // received from the subscription
             int registeredId = (*it_).messageId; // id registered by App
-            //TrafficApplicationResultMessageState status =  (*it_).status;
+            TrafficApplicationResultMessageState status =  (*it_).status;
             
-            if ((inputId == registeredId)/* && (status == kScheduled || status == kToBeApplied)*/) {
+            if ((inputId == registeredId) && (status == kScheduled || status == kToBeApplied)) {
                 stringstream log;
                 
                 (*it_).status = kToBeApplied;  // JHNOTE: changed from kScheduled to kToBeApplied -> registrering for a traf_sim subs
@@ -182,11 +184,11 @@ ApplicationLogic::ProcessReceptionOfApplicationMessage(vector<AppMessage>& messa
                 log << "APP --> [ApplicationLogic] ProcessReceptionOfApplicationMessage() Message " << registeredId << " is registered and changed status from kScheduled to kToBeApplied";
                 Log::Write((log.str()).c_str(), kLogLevelInfo); 
             } 
-            else {
+            /*else {
                  stringstream log;
                 log << "APP --> [ApplicationLogic]  ProcessReceptionOfApplicationMessage() Message " << registeredId << " not registered.";
                 Log::Write((log.str()).c_str(), kLogLevelWarning);
-            }
+            }*/
         }
     }
     return  true;
@@ -231,9 +233,9 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
 
   for (vector<AppMessage>::iterator it_ = m_messages.begin(); it_ != m_messages.end() ; ++it_) {
        //if no message received by nodeId => not process the message
-       if ( ! msgIsReceivedByNode(*it_, nodeId) ) continue;
+       //if ( ! msgIsReceivedByNode(*it_, nodeId) ) continue;
   
-       if (((*it_).status == kToBeScheduled)/*  ((*it_).senderId == nodeId)*/) { // we need to send an APP_MSG_SEND and it should be a subscription created by me
+       if (((*it_).status == kToBeScheduled) && ((*it_).senderId == nodeId)) { // we need to send an APP_MSG_SEND and it should be a subscription created by me
            
            (*it_).status = kScheduled;  // changed from kToBeScheduled to kScheduled
           
@@ -267,7 +269,7 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
 
            break;  // we break on each successful occurence, as the iCS can only read ONE subscription at a time..we will be called again by the iCS as long as we have something to request
        }
-       else if (((*it_).status == kToBeApplied)/* && ((*it_).senderId == nodeId)*/) { // we need to send an APP_CMD_TRAFFIC_SIM subscription
+       else if (((*it_).status == kToBeApplied) && ((*it_).senderId == nodeId)) { // we need to send an APP_CMD_TRAFFIC_SIM subscription
            (*it_).status = kApplied;  // changed from kToBeApplied to kApplied 
           
            stringstream log;
@@ -275,28 +277,36 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
            Log::Write((log.str()).c_str(), kLogLevelInfo); 
            
            for (vector<int>::iterator itDestIds = (*it_).receivedIds.begin(); itDestIds != (*it_).receivedIds.end() ; ++itDestIds) {
+                
+                
                    int destinationId = (*itDestIds);
                    //itDestIds=(*it_).receivedIds.erase(itDestIds);
-           
-                   //Command length
-	           mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 4);
-	           //Command type
-	           mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
-	           mySubsStorage.writeUnsignedByte(SUB_APP_CMD_TRAFF_SIM);
-	           mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE
-	           mySubsStorage.writeUnsignedByte(VALUE_SET_SPEED); //to change the speed
-	           mySubsStorage.writeInt(destinationId); //Destination node to set its maximum speed.
-	           mySubsStorage.writeFloat(m_alertSpeedlimit); //Set Maximum speed
+                if(!NodeIsSlowed(destinationId,timestep)){
+                       //Command length
+                   mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 4);
+                   //Command type
+                   mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
+                   mySubsStorage.writeUnsignedByte(SUB_APP_CMD_TRAFF_SIM);
+                   mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE
+                   mySubsStorage.writeUnsignedByte(VALUE_SET_SPEED); //to change the speed
+                   mySubsStorage.writeInt(destinationId); //Destination node to set its maximum speed.
+                   mySubsStorage.writeFloat(m_alertSpeedlimit); //Set Maximum speed
+                   
+                   //keep the time when vehicle change her speed
+                   m_carLastSpeedChangeTime.erase(destinationId);
+                   m_carLastSpeedChangeTime.insert(std::pair<int,int>(destinationId,timestep)); 
 	           
-	           stringstream log;
+	                stringstream log;
                    log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " slowed !";
                    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+                   
+               }
             }
-	   }else if ( (*it_).status == kApplied && AlertIsExpired(*it_,timestep)){
+	   }
+
+	    if (AlertIsExpired(nodeId,timestep)){
 	       //Restore initial speed limit
-           for (vector<int>::iterator itDestIds = (*it_).receivedIds.begin(); itDestIds != (*it_).receivedIds.end() ; ) {
-                   int destinationId = (*itDestIds);
-                   itDestIds=(*it_).receivedIds.erase(itDestIds);
+
            
                    //Command length
 	           mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 4);
@@ -305,13 +315,12 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
 	           mySubsStorage.writeUnsignedByte(SUB_APP_CMD_TRAFF_SIM);
 	           mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE
 	           mySubsStorage.writeUnsignedByte(VALUE_SET_SPEED); //to change the speed
-	           mySubsStorage.writeInt(destinationId); //Destination node to set its maximum speed.
+	           mySubsStorage.writeInt(nodeId); //Destination node to set its maximum speed.
 	           mySubsStorage.writeFloat(SPEED_LIMIT); //Set Maximum speed
 	           
 	           stringstream log;
-                   log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " speed restored !";
-                   Log::Write((log.str()).c_str(), kLogLevelInfo); 
-            }	   
+                   log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << nodeId << " speed restored !";
+                   Log::Write((log.str()).c_str(), kLogLevelInfo);    
 	   }
   }
   return  mySubsStorage;
@@ -325,7 +334,8 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
    vector<AppMessage> results;
    if (     timestep >= m_appStartTimeStep 
        &&   FogIsActive(timestep) 
-       &&   IsInFog(senderId)) { 
+       &&   IsInFog(senderId)
+       /*&&  !NodeIsSlowed(senderId,timestep) */) { 
         // Loop vehicles in the area, one message per vehicle
         stringstream log;  
         
@@ -339,10 +349,18 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
         message.destinationId = 0; //broadcast !
         message.createdTimeStep = timestep;
         message.payloadValue = m_alertSpeedlimit; 
+        
         log<< " ID " << message.destinationId << " with new speed " << message.payloadValue<< " Message is now kToBeScheduled ";
         m_messages.push_back(message);
+        
+        
+        //I must also reduce my speed ! So, I act as if I already receive this message.
+       /* message.messageId = ++m_messageCounter;
+        message.status = kToBeApplied; 
+        message.receivedIds.push_back(senderId);
+        m_messages.push_back(message);
 
-        Log::Write((log.str()).c_str(), kLogLevelInfo); 
+        Log::Write((log.str()).c_str(), kLogLevelInfo); */
 
         // Keep in safe place all the results to send back to the iCS
         results = m_messages;
@@ -363,9 +381,47 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
 }
 
 bool 
-ApplicationLogic::AlertIsExpired(AppMessage& msg, int timestep){
-    return msg.status == kApplied && (timestep > msg.createdTimeStep+m_alertTimeOut);
+ApplicationLogic::AlertIsExpired(int nodeId, int timestep){
+    std::map<int,int>::iterator it = m_carLastSpeedChangeTime.find(nodeId);
+
+
+    if (it == m_carLastSpeedChangeTime.end()) 
+        //This vehicle has not changed her speed
+        return false;
+    else if (timestep <= it->second+m_alertTimeOut)
+        //This vehicle has changed her speed, but the alert has not expired
+        return false;
+    else {
+        //This vehicle has changed her speed, but the alert has expired
+        m_carLastSpeedChangeTime.erase (it);
+        return true;
+    }
+
+    
+    //return msg.status == kApplied && (timestep > msg.createdTimeStep+m_alertTimeOut);
 }
+
+
+bool 
+ApplicationLogic::NodeIsSlowed(int nodeId, int timestep){
+    std::map<int,int>::iterator it = m_carLastSpeedChangeTime.find(nodeId);
+
+
+    if (it == m_carLastSpeedChangeTime.end()) 
+        //This vehicle has not changed her speed
+        return false;
+    else if (timestep <= it->second+m_alertTimeOut)
+        //This vehicle has changed her speed, but the alert has not expired
+        return true;
+    else {
+        //This vehicle has changed her speed, but the alert has expired
+        return false;
+    }
+
+    
+    //return msg.status == kApplied && (timestep > msg.createdTimeStep+m_alertTimeOut);
+}
+
 
 bool 
 ApplicationLogic::FogIsActive(int timestep){
@@ -375,7 +431,7 @@ ApplicationLogic::FogIsActive(int timestep){
 bool
 ApplicationLogic::IsInFog(int idNode){
 
-    for (vector<Vehicle>::const_iterator it = m_vehiclesInArea.begin() ; it != m_vehiclesInArea.end() ; it++) {
+    for (vector<Vehicle>::const_iterator it = m_vehiclesInFog.begin() ; it != m_vehiclesInFog.end() ; it++) {
         if ((*it).id == idNode)
             return true;
     }
