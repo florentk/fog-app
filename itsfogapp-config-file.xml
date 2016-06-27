@@ -32,7 +32,7 @@
     <alert>
       <radiusalert value="1000"/>
       <timeoutalert value="500"/>
-      <alertspeedlimit value="0"/>     
+      <alertspeedlimit value="20"/>     
     </alert>          
         
 

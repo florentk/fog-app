@@ -41,10 +41,15 @@ using namespace std;
 bool ApplicationLogic::m_camAreaIsSet = false;
 bool ApplicationLogic::m_returnCarAreaIsSet = false;
 
+
 vector<Vehicle> ApplicationLogic::m_vehiclesInFog;
+
+
+
 vector<AppMessage> ApplicationLogic::m_messages;
 map<int,bool> ApplicationLogic::m_carRxSubs;
 map<int, int> ApplicationLogic::m_carLastSpeedChangeTime;   
+map<int, int> ApplicationLogic::m_vehiclesInFogOnceTime; 
 
 int ApplicationLogic::m_messageCounter = 0;
 Area ApplicationLogic::m_camArea;
@@ -294,9 +299,9 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
                    
                    //keep the time when vehicle change her speed
                    m_carLastSpeedChangeTime.erase(destinationId);
-                   m_carLastSpeedChangeTime.insert(std::pair<int,int>(destinationId,timestep)); 
+	           m_carLastSpeedChangeTime.insert(std::pair<int,int>(destinationId,timestep)); 
 	           
-	                stringstream log;
+		     stringstream log;
                    log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " slowed !";
                    Log::Write((log.str()).c_str(), kLogLevelInfo); 
                    
@@ -361,6 +366,22 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
         m_messages.push_back(message);
 
         Log::Write((log.str()).c_str(), kLogLevelInfo); */
+
+	if(m_vehiclesInFogOnceTime.find(senderId) == m_vehiclesInFogOnceTime.end()){
+            	stringstream log;
+           	log << "[ApplicationLogic] Vehicle " << senderId << "enter slowed at ";
+          	
+	  //The vehicle is enter in fog now
+		if(NodeIsSlowed(senderId,timestep)){
+			log << timestep;
+			Log::Write((log.str()).c_str(), kLogLevelInfo);
+			m_vehiclesInFogOnceTime.insert(std::pair<int,int>(senderId,timestep));
+		}else{ 
+			log << -1;
+			Log::Write((log.str()).c_str(), kLogLevelInfo);
+			m_vehiclesInFogOnceTime.insert(std::pair<int,int>(senderId,-1));
+		}
+	}
 
         // Keep in safe place all the results to send back to the iCS
         results = m_messages;
@@ -438,6 +459,23 @@ ApplicationLogic::IsInFog(int idNode){
     
     return false;
 }
+
+float 
+ApplicationLogic::PartOfVehicleInFogSlowed(int idNode){
+    int slowed=0;
+
+    if (m_vehiclesInFogOnceTime.size()==0)
+        return 1.0;
+
+    for (std::map<int,int>::iterator it = m_vehiclesInFogOnceTime.begin() ; it != m_vehiclesInFogOnceTime.end() ; it++) {
+        if(it->second >= 0)
+            slowed++;
+    }
+    
+    return (float)slowed / (float)m_vehiclesInFogOnceTime.size();
+}
+
+
 
 bool
 ApplicationLogic::msgIsReceivedByNode(AppMessage& msg, int idNode){

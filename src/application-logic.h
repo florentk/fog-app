@@ -111,7 +111,10 @@ public:
     static std::map<int, bool> m_carRxSubs;
     
      /// @brief The collection of vehicles, which speed changed : pair of (nodeid,time) 
-    static std::map<int, int> m_carLastSpeedChangeTime;   
+    static std::map<int, int> m_carLastSpeedChangeTime; 
+
+    /// @brief The collection of vehicles in the hazardous zone once : pair of (nodeid, time)
+    static std::map<int, int> m_vehiclesInFogOnceTime;  
 
     /// @brief Counter to create different message IDs
     static int m_messageCounter;
@@ -163,6 +166,8 @@ public:
 
     /// @brief Sets sucessufuly received messages to be apply the payload in the next time step
     static bool ProcessMessageNotifications(std::vector<AppMessage>& messages);
+
+    static float PartOfVehicleInFogSlowed(int idNode);
 
     /// @brief For every vehicle in the area assigns a result value
     static std::vector<AppMessage> SendBackExecutionResults(int senderId, int timestep);
