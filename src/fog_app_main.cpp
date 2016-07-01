@@ -104,7 +104,10 @@ fillOptions()
     oc.addDescription("timeoutalert", "Alert", "Defines the timeout of a alert");       
     
     oc.doRegister("alertspeedlimit", new Option_Float());
-    oc.addDescription("alertspeedlimit", "Alert", "Defines the speed limit on alert");             
+    oc.addDescription("alertspeedlimit", "Alert", "Defines the speed limit on alert");    
+   
+    oc.doRegister("alertactif", new Option_Bool());
+    oc.addDescription("alertactif", "Alert", "Defines if the alert is activ");                    
 }
 
 /* -------------------------------------------------------------------------
@@ -209,6 +212,10 @@ checkOptions()
         MsgHandler::getErrorInstance()->inform("Missing the speed limit on alert.");
         ret = false;
     }
+    if (!oc.isSet("alertactif")) {
+        MsgHandler::getErrorInstance()->inform("Missing the activity alert");
+        ret = false;
+    }   
     
     return ret;
 }
@@ -269,7 +276,7 @@ int main(int argc, char **argv)
         if (ApplicationLogic::SetAlertRadius(oc.getFloat("radiusalert")) == EXIT_FAILURE) throw ProcessError();
         if (ApplicationLogic::SetAlertTimeOut(oc.getInt("timeoutalert")) == EXIT_FAILURE) throw ProcessError();
         if (ApplicationLogic::SetAlertSpeedlimit(oc.getFloat("alertspeedlimit")) == EXIT_FAILURE) throw ProcessError();
-        
+        if (ApplicationLogic::SetAlertActif(oc.getBool("alertactif")) == EXIT_FAILURE) throw ProcessError();        
        
 
 

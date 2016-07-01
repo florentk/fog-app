@@ -13,3 +13,4 @@ missing
 install-sh
 compile
 libtool
+*.dump

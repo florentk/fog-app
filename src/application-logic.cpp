@@ -60,7 +60,8 @@ int ApplicationLogic::m_fogStartTimeStep;
 int ApplicationLogic::m_fogEndTimeStep;    
 float ApplicationLogic::m_alertRadius;
 int ApplicationLogic::m_alertTimeOut; 
-float ApplicationLogic::m_alertSpeedlimit;    
+float ApplicationLogic::m_alertSpeedlimit;   
+bool ApplicationLogic::m_alertActif=false;
 
 // ===========================================================================
 // method definitions
@@ -355,17 +356,19 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
         message.createdTimeStep = timestep;
         message.payloadValue = m_alertSpeedlimit; 
         
-        log<< " ID " << message.destinationId << " with new speed " << message.payloadValue<< " Message is now kToBeScheduled ";
-        m_messages.push_back(message);
         
+        if(m_alertActif){
+          log<< " ID " << message.destinationId << " with new speed " << message.payloadValue<< " Message is now kToBeScheduled ";
+          m_messages.push_back(message);
+          Log::Write((log.str()).c_str(), kLogLevelInfo);
+        }else{
+          //I must also reduce my speed ! So, I act as if I already receive this message.
+          message.messageId = ++m_messageCounter;
+          message.status = kToBeApplied; 
+          message.receivedIds.push_back(senderId);
+          m_messages.push_back(message);
+        }
         
-        //I must also reduce my speed ! So, I act as if I already receive this message.
-       /* message.messageId = ++m_messageCounter;
-        message.status = kToBeApplied; 
-        message.receivedIds.push_back(senderId);
-        m_messages.push_back(message);
-
-        Log::Write((log.str()).c_str(), kLogLevelInfo); */
 
 	if(m_vehiclesInFogOnceTime.find(senderId) == m_vehiclesInFogOnceTime.end()){
             	stringstream log;
@@ -639,5 +642,21 @@ int ApplicationLogic::SetAlertSpeedlimit(float alertspeedlimit)
 
     return EXIT_SUCCESS;     
 }       
+
+int ApplicationLogic::SetAlertActif(bool actif)
+{
+    stringstream log;
+    if(actif)
+      log << "Alert is activ";
+    else
+      log << "Alert is inactiv";    
+      
+    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
+    m_alertActif = actif;
+   
+    return EXIT_SUCCESS;      
+}
+
 
 

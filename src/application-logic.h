@@ -156,7 +156,10 @@ public:
     static int SetFogStartTimeStep(int timestep);
     
     /// @brief Assigns a time step for the fog is over returning values
-    static int SetFogEndTimeStep(int timestep);    
+    static int SetFogEndTimeStep(int timestep);   
+    
+    /// @brief Activ ou inactiv the alert
+    static int SetAlertActif(bool actif); 
 
     /// @brief Skeleton to unsubcription. Demo app never requests it
     static bool DropSubscription(int subscriptionType);
@@ -230,7 +233,10 @@ private:
     static int m_alertTimeOut; 
     
     /// @brief Speed limit on alert
-    static float m_alertSpeedlimit;           
+    static float m_alertSpeedlimit;    
+    
+    /// @brief Sending alert actif or not
+    static bool m_alertActif;               
 };
 
 #endif
