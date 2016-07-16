@@ -10,7 +10,7 @@
     </scenario>
 
     <trafficsim>
-	<traffic-executable value="sumo-gui -c"/>        
+	<traffic-executable value="sumo -c"/>        
 	<traffic-file value="./network/highway.sumo.cfg"/>
 	<traffic-host value="localhost"/>
         <traffic-port value="5500"/>
@@ -29,10 +29,10 @@
     </applications>
 
     <logs>
-        <ics-log-path value="ics-log.txt"/>
+        <ics-log-path value="log/ics/ics-log.txt"/>
 	<ics-log-level value="INFO"/>
 	<ics-log-time-size value="100"/>
-        <ns3-log-path value="ns3-log.txt"/>
+        <ns3-log-path value="log/ns/ns3-log.txt"/>
     </logs>
 
 </configuration>

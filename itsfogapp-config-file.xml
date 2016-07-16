@@ -5,7 +5,7 @@
     <general>
         <start value="50"/>
         <socket value="1986"/>
-        <logfile value="itsfogapplogfile.txt"/>
+        <logfile value="log/app/itsfogapplogfile.txt"/>
     </general>
 
     <camareasubscription>

@@ -59,7 +59,7 @@ if ( __name__ == "__main__"):
    parser.setContentHandler( Handler )
    
    try:
-    parser.parse("netstate.dump")
+    parser.parse("log/sumo/netstate.dump")
     print Handler.nb_no_safety
    except:
     print Handler.nb_no_safety

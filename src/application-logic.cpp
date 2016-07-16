@@ -360,14 +360,15 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
         if(m_alertActif){
           log<< " ID " << message.destinationId << " with new speed " << message.payloadValue<< " Message is now kToBeScheduled ";
           m_messages.push_back(message);
-          Log::Write((log.str()).c_str(), kLogLevelInfo);
-        }else{
-          //I must also reduce my speed ! So, I act as if I already receive this message.
           message.messageId = ++m_messageCounter;
+          Log::Write((log.str()).c_str(), kLogLevelInfo);
+        }/*else{*/
+          //I must also reduce my speed ! So, I act as if I already receive this message.
+          
           message.status = kToBeApplied; 
           message.receivedIds.push_back(senderId);
           m_messages.push_back(message);
-        }
+        //}
         
 
 	if(m_vehiclesInFogOnceTime.find(senderId) == m_vehiclesInFogOnceTime.end()){
