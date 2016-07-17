@@ -287,24 +287,59 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
                 
                    int destinationId = (*itDestIds);
                    //itDestIds=(*it_).receivedIds.erase(itDestIds);
-                if(!NodeIsSlowed(destinationId,timestep)){
-                       //Command length
-                   mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 4);
-                   //Command type
-                   mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
-                   mySubsStorage.writeUnsignedByte(SUB_APP_CMD_TRAFF_SIM);
-                   mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE
-                   mySubsStorage.writeUnsignedByte(VALUE_SET_SPEED); //to change the speed
-                   mySubsStorage.writeInt(destinationId); //Destination node to set its maximum speed.
-                   mySubsStorage.writeFloat(m_alertSpeedlimit); //Set Maximum speed
+                if(true /*!NodeIsSlowed(destinationId,timestep)*/){
+
+                   
+                   switch ((*it_).action){
+                        case VALUE_SLOW_DOWN:
+                        {
+                           //Command length
+                           mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 4 + 4);
+                           //Command type
+                           mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
+                           mySubsStorage.writeUnsignedByte(SUB_APP_CMD_TRAFF_SIM);
+                           mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE
+                           mySubsStorage.writeUnsignedByte(VALUE_SLOW_DOWN); //to change the speed
+                           mySubsStorage.writeInt(destinationId); //Destination node to set its maximum speed.
+                           mySubsStorage.writeFloat(m_alertSpeedlimit); //Set Maximum speed
+                           mySubsStorage.writeInt(5000); //duration of slow down
+                           	           
+	                   stringstream log;
+                           log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " slowed !";
+                           Log::Write((log.str()).c_str(), kLogLevelInfo); 
+                           break;
+                        }
+                        
+                        case VALUE_SET_SPEED:
+                        {
+                           //Command length
+                           mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 4 );
+                           //Command type
+                           mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
+                           mySubsStorage.writeUnsignedByte(SUB_APP_CMD_TRAFF_SIM);
+                           mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE
+                           mySubsStorage.writeUnsignedByte(VALUE_SET_SPEED); //to change the speed
+                           mySubsStorage.writeInt(destinationId); //Destination node to set its maximum speed.
+                           mySubsStorage.writeFloat(m_alertSpeedlimit); //Set Maximum speed
+                           	           
+	                   stringstream log;
+                           log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " break !";
+                           Log::Write((log.str()).c_str(), kLogLevelInfo); 
+                           break;
+                        }    
+                        
+                        default :
+                        {
+                           stringstream log;
+                           log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " bad action";
+                           Log::Write((log.str()).c_str(), kLogLevelError); 
+                        }                       
+                   }
                    
                    //keep the time when vehicle change her speed
                    m_carLastSpeedChangeTime.erase(destinationId);
 	           m_carLastSpeedChangeTime.insert(std::pair<int,int>(destinationId,timestep)); 
-	           
-		     stringstream log;
-                   log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " slowed !";
-                   Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
                    
                }
             }
@@ -322,7 +357,7 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
 	           mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE
 	           mySubsStorage.writeUnsignedByte(VALUE_SET_SPEED); //to change the speed
 	           mySubsStorage.writeInt(nodeId); //Destination node to set its maximum speed.
-	           mySubsStorage.writeFloat(SPEED_LIMIT); //Set Maximum speed
+	           mySubsStorage.writeFloat(-1); //Set Maximum speed
 	           
 	           stringstream log;
                    log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << nodeId << " speed restored !";
@@ -354,18 +389,19 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
         message.senderId = senderId;
         message.destinationId = 0; //broadcast !
         message.createdTimeStep = timestep;
-        message.payloadValue = m_alertSpeedlimit; 
+        message.action = VALUE_SLOW_DOWN; 
         
         
         if(m_alertActif){
-          log<< " ID " << message.destinationId << " with new speed " << message.payloadValue<< " Message is now kToBeScheduled ";
+          log<< " ID " << message.destinationId <<  " Message is now kToBeScheduled ";
           m_messages.push_back(message);
           message.messageId = ++m_messageCounter;
           Log::Write((log.str()).c_str(), kLogLevelInfo);
         }/*else{*/
-          //I must also reduce my speed ! So, I act as if I already receive this message.
+          //I must also reduce my speed ! But break by using VALUE_SET_SPEED.  So, I act as if I already receive this message.
           
           message.status = kToBeApplied; 
+          message.action = VALUE_SET_SPEED;
           message.receivedIds.push_back(senderId);
           m_messages.push_back(message);
         //}

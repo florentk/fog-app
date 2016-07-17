@@ -56,8 +56,8 @@ struct AppMessage {
     /// @brief Message creation time step
     int createdTimeStep;
 
-    /// @brief The speed to be updated with, i.e. the result
-    float payloadValue;
+    /// @brief The action
+    int action;
     
     /// @brief station IDs which received this message
     std::vector<int> receivedIds;

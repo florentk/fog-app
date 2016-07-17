@@ -197,6 +197,7 @@
 #define VALUE_RE_ROUTE   	    	0x03
 #define VALUE_GET_ROUTE_VARIABLE	0x04
 #define VALUE_SET_SPEED			0x05
+#define VALUE_SLOW_DOWN                 0x06
 
 #define TYPE_ERROR			0x00
 #define TYPE_EDGE_ID			0x01

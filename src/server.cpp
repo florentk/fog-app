@@ -374,7 +374,7 @@ Server::ExecuteApplication()
 	    
             myOutputStorage.writeUnsignedByte(4 + 4);
             // payload value
-            myOutputStorage.writeFloat(message.payloadValue);
+            myOutputStorage.writeInt(message.action);
             // message identifier
             myOutputStorage.writeInt(message.messageId);
             
