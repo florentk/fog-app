@@ -199,6 +199,9 @@ private:
     /// @brief return true if the vehicle is already slowed (current alert)
     static bool NodeIsSlowed(int nodeId, int timestep);
     
+    /// @brief return true if the vehicle is current slowed
+    static bool NodeCurrentSlowed(int nodeId, int timestep);
+
     /// @brief return true if the fog is active
     static bool FogIsActive(int timestep);
     

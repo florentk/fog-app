@@ -14,3 +14,4 @@ install-sh
 compile
 libtool
 *.dump
+*.log

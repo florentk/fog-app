@@ -30,10 +30,10 @@
     
     
     <alert>
-      <alertactif value="false"/>
-      <radiusalert value="1000"/>
+      <alertactif value="true"/>
+      <radiusalert value="2000"/>
       <timeoutalert value="500"/>
-      <alertspeedlimit value="20"/>     
+      <alertspeedlimit value="10"/>     
     </alert>          
         
 

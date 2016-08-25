@@ -287,7 +287,7 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
                 
                    int destinationId = (*itDestIds);
                    //itDestIds=(*it_).receivedIds.erase(itDestIds);
-                if(true /*!NodeIsSlowed(destinationId,timestep)*/){
+                if(!NodeIsSlowed(destinationId,timestep)){
 
                    
                    switch ((*it_).action){
@@ -345,7 +345,11 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
             }
 	   }
 
-	    if (AlertIsExpired(nodeId,timestep)){
+
+
+  }
+  
+	   if (AlertIsExpired(nodeId,timestep)){
 	       //Restore initial speed limit
 
            
@@ -363,7 +367,25 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
                    log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << nodeId << " speed restored !";
                    Log::Write((log.str()).c_str(), kLogLevelInfo);    
 	   }
-  }
+
+	  if (NodeCurrentSlowed(nodeId,timestep)){
+
+                   //Command length
+                   mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 4);
+                   //Command type
+                   mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
+                   mySubsStorage.writeUnsignedByte(SUB_APP_CMD_TRAFF_SIM);
+                   mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE
+                   mySubsStorage.writeUnsignedByte(VALUE_SET_SPEED); //to change the speed
+                   mySubsStorage.writeInt(nodeId); //Destination node to set its maximum speed.
+                   mySubsStorage.writeFloat(m_alertSpeedlimit); //Set Maximum speed
+
+                   stringstream log;
+                   log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << nodeId << " end of slowing   !";
+                   Log::Write((log.str()).c_str(), kLogLevelInfo);
+
+          } 
+  
   return  mySubsStorage;
 }
 
@@ -376,7 +398,7 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
    if (     timestep >= m_appStartTimeStep 
        &&   FogIsActive(timestep) 
        &&   IsInFog(senderId)
-       /*&&  !NodeIsSlowed(senderId,timestep) */) { 
+       &&  !NodeIsSlowed(senderId,timestep) ) { 
         // Loop vehicles in the area, one message per vehicle
         stringstream log;  
         
@@ -460,6 +482,21 @@ ApplicationLogic::AlertIsExpired(int nodeId, int timestep){
 
     
     //return msg.status == kApplied && (timestep > msg.createdTimeStep+m_alertTimeOut);
+}
+
+bool 
+ApplicationLogic::NodeCurrentSlowed(int nodeId, int timestep){
+    std::map<int,int>::iterator it = m_carLastSpeedChangeTime.find(nodeId);
+
+
+    if (it == m_carLastSpeedChangeTime.end()) 
+        //This vehicle has not changed her speed
+        return false;
+    else if (timestep <= it->second+5)
+        return true;
+    else {
+        return false;
+    }
 }
 
 
