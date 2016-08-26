@@ -378,7 +378,7 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
                    mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE
                    mySubsStorage.writeUnsignedByte(VALUE_SET_SPEED); //to change the speed
                    mySubsStorage.writeInt(nodeId); //Destination node to set its maximum speed.
-                   mySubsStorage.writeFloat(m_alertSpeedlimit); //Set Maximum speed
+                   mySubsStorage.writeFloat(m_alertSpeedlimit); //Set fog speed limit
 
                    stringstream log;
                    log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << nodeId << " end of slowing   !";

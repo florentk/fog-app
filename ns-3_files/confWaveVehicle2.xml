@@ -3,21 +3,22 @@
 
   <yansWifiChannel>
     <propagationLoss name="ns3::LogDistancePropagationLossModel"/>
-    <propagationLoss attribute="ReferenceLoss" value="41.8588"/>
+    <propagationLoss attribute="ReferenceLoss" value="46.6777"/>
     <propagationLoss attribute="Exponent" value="3"/>
   </yansWifiChannel>
  
    <yansWifiPhy>
-    <wavePhyCCH attribute="TxGain" value="0.0"/>
-    <wavePhyCCH attribute="RxGain" value="0.0"/>
-    <wavePhyCCH attribute="TxPowerLevels" value="60"/>
-    <wavePhyCCH attribute="TxPowerEnd" value="33"/>
-    <wavePhyCCH attribute="TxPowerStart" value="13"/>
-    <wavePhySCH attribute="TxGain" value="0.0"/>
-    <wavePhySCH attribute="RxGain" value="0.0"/>
-    <wavePhySCH attribute="TxPowerLevels" value="60"/>
-    <wavePhySCH attribute="TxPowerEnd" value="33"/>
-    <wavePhySCH attribute="TxPowerStart" value="11"/>    
+    <wavePhyCCH attribute="TxGain" value="7.0"/>
+    <wavePhyCCH attribute="RxGain" value="7.0"/>
+    <wavePhyCCH attribute="TxPowerLevels" value="1"/>
+    <wavePhyCCH attribute="TxPowerEnd" value="20"/>
+    <wavePhyCCH attribute="TxPowerStart" value="20"/>
+
+    <wavePhySCH attribute="TxGain" value="7.0"/>
+    <wavePhySCH attribute="RxGain" value="7.0"/>
+    <wavePhySCH attribute="TxPowerLevels" value="1"/>
+    <wavePhySCH attribute="TxPowerEnd" value="20"/>
+    <wavePhySCH attribute="TxPowerStart" value="20"/>    
   </yansWifiPhy>
   
   <qosWifiMac>
