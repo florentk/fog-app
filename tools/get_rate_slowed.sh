@@ -1,4 +1,5 @@
-N=`grep "enter slowed at -1" log/app/itsfogapplogfile.txt | wc -l`
-SLOW=`grep "enter" log/app/itsfogapplogfile.txt | wc -l`
+FILE=$1
+N=`grep "enter in hazard zone at -1" $FILE | wc -l`
+SLOW=`grep "enter in hazard zone" $FILE | wc -l`
 RATE=`echo 1.0 - $N/$SLOW | bc -l`
 echo $N $SLOW $RATE

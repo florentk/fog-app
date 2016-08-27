@@ -3,7 +3,7 @@
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.sf.net/xsd/demoappConfiguration.xsd">
 
     <general>
-        <start value="50"/>
+        <start value="100"/>
         <socket value="1986"/>
         <logfile value="log/app/itsfogapplogfile.txt"/>
     </general>
@@ -24,16 +24,16 @@
         <xfog value="5000"/>
         <yfog value="50"/>
         <radiusfog value="500"/>
-        <startfog value="0"/>
+        <startfog value="100"/>
         <endfog value="500"/>
     </fogarea>   
     
     
     <alert>
       <alertactif value="true"/>
-      <radiusalert value="2000"/>
-      <timeoutalert value="500"/>
-      <alertspeedlimit value="10"/>     
+      <radiusalert value="4000"/>
+      <timeoutalert value="100"/>
+      <alertspeedlimit value="20"/>     
     </alert>          
         
 

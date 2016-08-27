@@ -241,22 +241,35 @@ Server::LookForNewSubscriptions()
 
     if (!ApplicationLogic::m_camAreaIsSet) {
         Area area = ApplicationLogic::GetCamArea();
-        SubsSetCamArea(myOutputStorage, nodeId, timestep, area);
+        if(SubsSetCamArea(myOutputStorage, nodeId, timestep, area))
+          //ADDED by Florent KAISSER 08/27/2016
+          // new subscription then return now, iCS recall next
+          return true;	
     } 
-    else if (!ApplicationLogic::m_returnCarAreaIsSet) {
+    
+    if (!ApplicationLogic::m_returnCarAreaIsSet) {
         Area area = ApplicationLogic::GetReturningCarArea();
-        SubsReturnCarsInZone(myOutputStorage, nodeId, timestep, area);
+        if(SubsReturnCarsInZone(myOutputStorage, nodeId, timestep, area))
+          //ADDED by Florent KAISSER 08/27/2016
+          // new subscription then return now, iCS recall next
+          return true;	
     } 
     
     Storage myRxSubsStorage = ApplicationLogic::RequestReceiveSubscription(nodeId, timestep); 
     if(myRxSubsStorage.size() > 0) {  
-        myOutputStorage.writeStorage(myRxSubsStorage);	  
+        myOutputStorage.writeStorage(myRxSubsStorage);
+        //ADDED by Florent KAISSER 08/27/2016
+        // new subscription then return now, iCS recall next
+        return true;	  
     }
    
      
     Storage myTxSubsStorage = ApplicationLogic::CheckForRequiredSubscriptions(nodeId, timestep);
     if(myTxSubsStorage.size() > 0) {  
        myOutputStorage.writeStorage(myTxSubsStorage);	  
+        //ADDED by Florent KAISSER 08/27/2016
+        // new subscription then return now, iCS recall next
+        return true;	       
     }
 
     // this subscription will ALWAYS be added, but as the iCS can only read one at a time, it will be read only when nothing else will need to be done at the APP   

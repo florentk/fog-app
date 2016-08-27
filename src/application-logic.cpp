@@ -276,21 +276,24 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
            break;  // we break on each successful occurence, as the iCS can only read ONE subscription at a time..we will be called again by the iCS as long as we have something to request
        }
        else if (((*it_).status == kToBeApplied) && ((*it_).senderId == nodeId)) { // we need to send an APP_CMD_TRAFFIC_SIM subscription
-           (*it_).status = kApplied;  // changed from kToBeApplied to kApplied 
-          
-           stringstream log;
-           log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Message " << (*it_).messageId << " on " << nodeId << " is changed status from kToBeApplied to kApplied";
-           Log::Write((log.str()).c_str(), kLogLevelInfo); 
+           
+           if ((*it_).receivedIds.size() == 1) {
+             (*it_).status = kApplied;  // changed from kToBeApplied to kApplied 
+            
+             stringstream log;
+             log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Message " << (*it_).messageId << " on " << nodeId << " is changed status from kToBeApplied to kApplied";
+             Log::Write((log.str()).c_str(), kLogLevelInfo); 
+           }
            
            for (vector<int>::iterator itDestIds = (*it_).receivedIds.begin(); itDestIds != (*it_).receivedIds.end() ; ++itDestIds) {
                 
                 
                    int destinationId = (*itDestIds);
-                   //itDestIds=(*it_).receivedIds.erase(itDestIds);
-                if(!NodeIsSlowed(destinationId,timestep)){
+                   (*it_).receivedIds.erase(itDestIds);
+                //if(!NodeIsSlowed(destinationId,timestep)){
 
                    
-                   switch ((*it_).action){
+             /*      switch ((*it_).action){
                         case VALUE_SLOW_DOWN:
                         {
                            //Command length
@@ -311,7 +314,7 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
                         }
                         
                         case VALUE_SET_SPEED:
-                        {
+                        {*/
                            //Command length
                            mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 4 );
                            //Command type
@@ -325,8 +328,8 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
 	                   stringstream log;
                            log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " break !";
                            Log::Write((log.str()).c_str(), kLogLevelInfo); 
-                           break;
-                        }    
+
+                /*        }    
                         
                         default :
                         {
@@ -334,15 +337,15 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
                            log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " bad action";
                            Log::Write((log.str()).c_str(), kLogLevelError); 
                         }                       
-                   }
+                  }*/
                    
                    //keep the time when vehicle change her speed
-                   m_carLastSpeedChangeTime.erase(destinationId);
-	           m_carLastSpeedChangeTime.insert(std::pair<int,int>(destinationId,timestep)); 
-
-                   
-               }
+                  m_carLastSpeedChangeTime.erase(destinationId);
+	                m_carLastSpeedChangeTime.insert(std::pair<int,int>(destinationId,timestep)); 
+                 break;                   
+               //}
             }
+            break;
 	   }
 
 
@@ -368,7 +371,7 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
                    Log::Write((log.str()).c_str(), kLogLevelInfo);    
 	   }
 
-	  if (NodeCurrentSlowed(nodeId,timestep)){
+	  /*if (NodeCurrentSlowed(nodeId,timestep)){
 
                    //Command length
                    mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 4);
@@ -384,7 +387,7 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
                    log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << nodeId << " end of slowing   !";
                    Log::Write((log.str()).c_str(), kLogLevelInfo);
 
-          } 
+          } */
   
   return  mySubsStorage;
 }
@@ -394,59 +397,68 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
 vector<AppMessage>
 ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
 {
+   bool isSlowed = NodeIsSlowed(senderId,timestep);
    vector<AppMessage> results;
    if (     timestep >= m_appStartTimeStep 
        &&   FogIsActive(timestep) 
        &&   IsInFog(senderId)
-       &&  !NodeIsSlowed(senderId,timestep) ) { 
-        // Loop vehicles in the area, one message per vehicle
-        stringstream log;  
-        
-        log << "APP --> [ApplicationLogic] SendBackExecutionResults() creating new messages for ID "<< senderId << " for vehicles..." ;
-           
-
+     ) { 
+         
+	      //Init message
         AppMessage message;
-        message.messageId = ++m_messageCounter;
-        message.status = kToBeScheduled;  // JHNOTE: registers a APP_MSG_Sends subscription 
         message.senderId = senderId;
         message.destinationId = 0; //broadcast !
         message.createdTimeStep = timestep;
-        message.action = VALUE_SLOW_DOWN; 
-        
-        
+	      
         if(m_alertActif){
-          log<< " ID " << message.destinationId <<  " Message is now kToBeScheduled ";
-          m_messages.push_back(message);
-          message.messageId = ++m_messageCounter;
+          //Broadcast the alert
+          stringstream log;
+          log<< "Vehicle " << senderId << " broadcast alert";
           Log::Write((log.str()).c_str(), kLogLevelInfo);
-        }/*else{*/
-          //I must also reduce my speed ! But break by using VALUE_SET_SPEED.  So, I act as if I already receive this message.
           
+          message.messageId = ++m_messageCounter;
+          message.status = kToBeScheduled;  // JHNOTE: registers a APP_MSG_Sends subscription        
+          message.action = VALUE_SET_SPEED; 
+          m_messages.push_back(message);
+        }			
+           
+        
+        //Test if is the first time which vehicle enter in alert zone
+	      if(m_vehiclesInFogOnceTime.find(senderId) == m_vehiclesInFogOnceTime.end()){
+           
+           stringstream log; 
+           log << "Vehicle " << senderId << "enter in hazard zone at ";
+           
+                	
+	        //The vehicle is enter in fog now
+		      if(isSlowed){
+		        //Vehicle already slowed (message recevied)
+			      log << timestep;
+			      Log::Write((log.str()).c_str(), kLogLevelInfo);
+			      m_vehiclesInFogOnceTime.insert(std::pair<int,int>(senderId,timestep));
+		      }else{ 
+			      log << -1;
+			      Log::Write((log.str()).c_str(), kLogLevelInfo);
+			      m_vehiclesInFogOnceTime.insert(std::pair<int,int>(senderId,-1)); 
+		      }
+		      
+		
+          //I must reduce my speed ! But break by using VALUE_SET_SPEED.  So, I act as if I already receive this message.
+          message.messageId = ++m_messageCounter;
           message.status = kToBeApplied; 
           message.action = VALUE_SET_SPEED;
           message.receivedIds.push_back(senderId);
-          m_messages.push_back(message);
-        //}
-        
+          m_messages.push_back(message);	  
+          
+	      
+		      
+		      
+	    }
+	    
 
-	if(m_vehiclesInFogOnceTime.find(senderId) == m_vehiclesInFogOnceTime.end()){
-            	stringstream log;
-           	log << "[ApplicationLogic] Vehicle " << senderId << "enter slowed at ";
-          	
-	  //The vehicle is enter in fog now
-		if(NodeIsSlowed(senderId,timestep)){
-			log << timestep;
-			Log::Write((log.str()).c_str(), kLogLevelInfo);
-			m_vehiclesInFogOnceTime.insert(std::pair<int,int>(senderId,timestep));
-		}else{ 
-			log << -1;
-			Log::Write((log.str()).c_str(), kLogLevelInfo);
-			m_vehiclesInFogOnceTime.insert(std::pair<int,int>(senderId,-1));
-		}
-	}
+      // Keep in safe place all the results to send back to the iCS
+      results = m_messages; 	
 
-        // Keep in safe place all the results to send back to the iCS
-        results = m_messages;
     }
     
     // Loop current messages to find those to be applied and erase from the result record
