@@ -171,14 +171,9 @@ ApplicationLogic::ProcessReceptionOfApplicationMessage(vector<AppMessage>& messa
 
     // Loop messages received by the APP_MSG_RECEIVE Subscription
     for (vector<AppMessage>::iterator it = messages.begin(); it != messages.end() ; ++it) {
-        stringstream log;
-        
+
         int destinationId = (*it).destinationId;
-        log << "APP --> [ApplicationLogic] ProcessReceptionOfApplicationMessage() Message " << (*it).messageId << " received by " <<  destinationId;
-        Log::Write((log.str()).c_str(), kLogLevelInfo); 
-        
-        
-        
+
         // Match message with the registered by the App
         for (vector<AppMessage>::iterator it_ = m_messages.begin(); it_ != m_messages.end() ; ++it_) {
             int inputId = (*it).messageId; // received from the subscription
@@ -186,13 +181,16 @@ ApplicationLogic::ProcessReceptionOfApplicationMessage(vector<AppMessage>& messa
             TrafficApplicationResultMessageState status =  (*it_).status;
             
             if ((inputId == registeredId) && (status == kScheduled || status == kToBeApplied)) {
-                stringstream log;
                 
                 (*it_).status = kToBeApplied;  // JHNOTE: changed from kScheduled to kToBeApplied -> registrering for a traf_sim subs
                 (*it_).receivedIds.push_back(destinationId);
                 
-                log << "APP --> [ApplicationLogic] ProcessReceptionOfApplicationMessage() Message " << registeredId << " is registered and changed status from kScheduled to kToBeApplied";
+                stringstream log;
+                log << "APP --> [ApplicationLogic] ProcessReceptionOfApplicationMessage() Message " << (*it).messageId << " received by " <<  destinationId;
                 Log::Write((log.str()).c_str(), kLogLevelInfo); 
+                
+                /*log << "APP --> [ApplicationLogic] ProcessReceptionOfApplicationMessage() Message " << registeredId << " is registered and changed status from kScheduled to kToBeApplied";
+                Log::Write((log.str()).c_str(), kLogLevelInfo); */
             } 
             /*else {
                  stringstream log;
@@ -415,12 +413,12 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
         message.createdTimeStep = timestep;
 	      
         if(  m_alertActif 
-          && !(m_noAlertMessageIfIsSlowed ||  isSlowed) 
+          && !(m_noAlertMessageIfIsSlowed && isSlowed) 
           && IsTimeToSendAlert(senderId,timestep)
         ){
           //Broadcast the alert
           stringstream log;
-          log<< "Vehicle " << senderId << " broadcast alert";
+          log<< "Vehicle " << senderId << " broadcast alert at " << timestep;
           Log::Write((log.str()).c_str(), kLogLevelInfo);
           
           message.messageId = ++m_messageCounter;
@@ -428,6 +426,7 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
           message.action = VALUE_SET_SPEED; 
           m_messages.push_back(message);
           
+          m_lastBroadcast.erase(senderId);
           m_lastBroadcast.insert(std::pair<int,int>(senderId,timestep));
         }			
            
