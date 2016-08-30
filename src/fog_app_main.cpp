@@ -107,7 +107,18 @@ fillOptions()
     oc.addDescription("alertspeedlimit", "Alert", "Defines the speed limit on alert");    
    
     oc.doRegister("alertactif", new Option_Bool());
-    oc.addDescription("alertactif", "Alert", "Defines if the alert is activ");                    
+    oc.addDescription("alertactif", "Alert", "Defines if the alert is activ");          
+    
+    oc.doRegister("alertinterval", new Option_Integer());
+    oc.addDescription("alertinterval", "Alert", "Defines the Minimum interval between broadcast alert in second");   
+    
+    oc.doRegister("durationofslowdown", new Option_Integer());
+    oc.addDescription("durationofslowdown", "Alert", "Defines the Duration of slowdown in second");           
+    
+    oc.doRegister("noalertmessageifisslowed", new Option_Bool());
+    oc.addDescription("noalertmessageifisslowed", "Alert", "Defines the resend alert when the vehicule is slowed");        
+    
+              
 }
 
 /* -------------------------------------------------------------------------
@@ -216,6 +227,20 @@ checkOptions()
         MsgHandler::getErrorInstance()->inform("Missing the activity alert");
         ret = false;
     }   
+  
+    if (!oc.isSet("alertinterval")) {
+        MsgHandler::getErrorInstance()->inform("Missing the Minimum interval between broadcast alert in second");
+        ret = false;
+    }
+    
+    if (!oc.isSet("durationofslowdown")) {
+        MsgHandler::getErrorInstance()->inform("Missing the Duration of slowdown in second");
+        ret = false;
+    }
+    if (!oc.isSet("noalertmessageifisslowed")) {
+        MsgHandler::getErrorInstance()->inform("Missing the resend alert when the vehicule is slowed");
+        ret = false;
+    }     
     
     return ret;
 }
@@ -268,7 +293,6 @@ int main(int argc, char **argv)
         // Set desired returning car area user values
         if (ApplicationLogic::SetCarArea(oc.getFloat("xcar"), oc.getFloat("ycar"), oc.getFloat("radiuscar")) == EXIT_FAILURE) throw ProcessError();
 
-
         // Set desired returning values for fog application specific 
         if (ApplicationLogic::SetFogArea(oc.getFloat("xfog"), oc.getFloat("yfog"), oc.getFloat("radiusfog")) == EXIT_FAILURE) throw ProcessError();
         if (ApplicationLogic::SetFogStartTimeStep(oc.getInt("startfog")) == EXIT_FAILURE) throw ProcessError();        
@@ -277,9 +301,10 @@ int main(int argc, char **argv)
         if (ApplicationLogic::SetAlertTimeOut(oc.getInt("timeoutalert")) == EXIT_FAILURE) throw ProcessError();
         if (ApplicationLogic::SetAlertSpeedlimit(oc.getFloat("alertspeedlimit")) == EXIT_FAILURE) throw ProcessError();
         if (ApplicationLogic::SetAlertActif(oc.getBool("alertactif")) == EXIT_FAILURE) throw ProcessError();        
+        if (ApplicationLogic::SetAlertInterval(oc.getInt("alertinterval")) == EXIT_FAILURE) throw ProcessError();
+        if (ApplicationLogic::SetDurationOfSlowdown(oc.getInt("durationofslowdown")) == EXIT_FAILURE) throw ProcessError();       
+        if (ApplicationLogic::SetNoAlertMessageIfIsSlowed(oc.getBool("noalertmessageifisslowed")) == EXIT_FAILURE) throw ProcessError();     
        
-
-
         // Start the server
         Server::processCommands(oc.getInt("socket"));
 

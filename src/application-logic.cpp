@@ -50,6 +50,7 @@ vector<AppMessage> ApplicationLogic::m_messages;
 map<int,bool> ApplicationLogic::m_carRxSubs;
 map<int, int> ApplicationLogic::m_carLastSpeedChangeTime;   
 map<int, int> ApplicationLogic::m_vehiclesInFogOnceTime; 
+map<int, int> ApplicationLogic::m_lastBroadcast; 
 
 int ApplicationLogic::m_messageCounter = 0;
 Area ApplicationLogic::m_camArea;
@@ -62,6 +63,9 @@ float ApplicationLogic::m_alertRadius;
 int ApplicationLogic::m_alertTimeOut; 
 float ApplicationLogic::m_alertSpeedlimit;   
 bool ApplicationLogic::m_alertActif=false;
+int ApplicationLogic::m_alertInterval=1; 
+int ApplicationLogic::m_durationOfSlowdown=5;   
+bool ApplicationLogic::m_noAlertMessageIfIsSlowed=false;  
 
 // ===========================================================================
 // method definitions
@@ -273,7 +277,7 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
 	       mySubsStorage.writeFloat(m_fogArea.y); //y
 	       mySubsStorage.writeFloat(m_fogArea.radius + m_alertRadius);	//radius   		           
 
-           break;  // we break on each successful occurence, as the iCS can only read ONE subscription at a time..we will be called again by the iCS as long as we have something to request
+         return  mySubsStorage;  // we break on each successful occurence, as the iCS can only read ONE subscription at a time..we will be called again by the iCS as long as we have something to request
        }
        else if (((*it_).status == kToBeApplied) && ((*it_).senderId == nodeId)) { // we need to send an APP_CMD_TRAFFIC_SIM subscription
            
@@ -305,7 +309,7 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
                            mySubsStorage.writeUnsignedByte(VALUE_SLOW_DOWN); //to change the speed
                            mySubsStorage.writeInt(destinationId); //Destination node to set its maximum speed.
                            mySubsStorage.writeFloat(m_alertSpeedlimit); //Set Maximum speed
-                           mySubsStorage.writeInt(5000); //duration of slow down
+                           mySubsStorage.writeInt(m_durationOfSlowdown * 1000); //duration of slow down
                            	           
 	                   stringstream log;
                            log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " slowed !";
@@ -342,10 +346,9 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
                    //keep the time when vehicle change her speed
                   m_carLastSpeedChangeTime.erase(destinationId);
 	                m_carLastSpeedChangeTime.insert(std::pair<int,int>(destinationId,timestep)); 
-                 break;                   
+                 return  mySubsStorage;                    
                //}
             }
-            break;
 	   }
 
 
@@ -368,7 +371,8 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
 	           
 	           stringstream log;
                    log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << nodeId << " speed restored !";
-                   Log::Write((log.str()).c_str(), kLogLevelInfo);    
+                   Log::Write((log.str()).c_str(), kLogLevelInfo); 
+        return  mySubsStorage;   
 	   }
 
 	  /*if (NodeCurrentSlowed(nodeId,timestep)){
@@ -389,7 +393,7 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
 
           } */
   
-  return  mySubsStorage;
+  return  mySubsStorage; 
 }
 
 // even though we do not need to return a value to the iCS result container (we use the VOID_RESULT_CONTAINER),  
@@ -410,7 +414,10 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
         message.destinationId = 0; //broadcast !
         message.createdTimeStep = timestep;
 	      
-        if(m_alertActif){
+        if(  m_alertActif 
+          && !(m_noAlertMessageIfIsSlowed ||  isSlowed) 
+          && IsTimeToSendAlert(senderId,timestep)
+        ){
           //Broadcast the alert
           stringstream log;
           log<< "Vehicle " << senderId << " broadcast alert";
@@ -420,6 +427,8 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
           message.status = kToBeScheduled;  // JHNOTE: registers a APP_MSG_Sends subscription        
           message.action = VALUE_SET_SPEED; 
           m_messages.push_back(message);
+          
+          m_lastBroadcast.insert(std::pair<int,int>(senderId,timestep));
         }			
            
         
@@ -476,6 +485,27 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
 }
 
 bool 
+ApplicationLogic::IsTimeToSendAlert(int nodeId, int timestep){
+    std::map<int,int>::iterator it = m_lastBroadcast.find(nodeId);
+
+
+    if (it == m_lastBroadcast.end()) 
+        //This vehicle has never send alert
+        return true;
+    else if (timestep >= it->second+m_alertInterval)
+        //This vehicle has send an alert longer than the interval delay
+        return true;
+    else {
+        //This vehicle has send an alert less than the interval delay
+        return false;
+    }
+
+    
+    //return msg.status == kApplied && (timestep > msg.createdTimeStep+m_alertTimeOut);
+}
+
+
+bool 
 ApplicationLogic::AlertIsExpired(int nodeId, int timestep){
     std::map<int,int>::iterator it = m_carLastSpeedChangeTime.find(nodeId);
 
@@ -504,7 +534,7 @@ ApplicationLogic::NodeCurrentSlowed(int nodeId, int timestep){
     if (it == m_carLastSpeedChangeTime.end()) 
         //This vehicle has not changed her speed
         return false;
-    else if (timestep <= it->second+5)
+    else if (timestep <= it->second+m_durationOfSlowdown)
         return true;
     else {
         return false;
@@ -745,4 +775,47 @@ int ApplicationLogic::SetAlertActif(bool actif)
 }
 
 
+int ApplicationLogic::SetAlertInterval(int interval){
+    stringstream log;
+    log << "Alert interval minimum : " << interval;
+    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
+    if (interval < 0) {
+        Log::Write("Interval is negative", kLogLevelError);
+        return EXIT_FAILURE;
+    }
+    
+    m_alertInterval = interval;
+
+    return EXIT_SUCCESS;  
+}
+
+int ApplicationLogic::SetDurationOfSlowdown(int duration){
+    stringstream log;
+    log << "Duration of slowdown : " << duration;
+    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
+    if (duration < 0) {
+        Log::Write("Duration is negative", kLogLevelError);
+        return EXIT_FAILURE;
+    }
+    
+    m_durationOfSlowdown = duration;
+
+    return EXIT_SUCCESS;  
+}
+
+int ApplicationLogic::SetNoAlertMessageIfIsSlowed(bool enable){
+    stringstream log;
+    if(enable)
+      log << "NoAlertMessageIfIsSlowed is activ";
+    else
+      log << "NoAlertMessageIfIsSlowed is inactiv";    
+      
+    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
+    m_noAlertMessageIfIsSlowed = enable;
+   
+    return EXIT_SUCCESS;   
+}  
 

@@ -115,6 +115,9 @@ public:
 
     /// @brief The collection of vehicles in the hazardous zone once : pair of (nodeid, time)
     static std::map<int, int> m_vehiclesInFogOnceTime;  
+    
+    /// @brief The time of last broadcast for each vehicle
+    static std::map<int, int> m_lastBroadcast; 
 
     /// @brief Counter to create different message IDs
     static int m_messageCounter;
@@ -160,7 +163,16 @@ public:
     
     /// @brief Activ ou inactiv the alert
     static int SetAlertActif(bool actif); 
-
+    
+    /// @brief Intializes the Minimum interval between broadcast alert in second
+    static int SetAlertInterval(int interval); 
+        
+     /// @brief Intializes the Duration of slowdown in second
+    static int SetDurationOfSlowdown(int duration);   
+    
+    /// @brief enable or disable the resend alert when the vehicule is slowed
+    static int SetNoAlertMessageIfIsSlowed(bool enable);     
+    
     /// @brief Skeleton to unsubcription. Demo app never requests it
     static bool DropSubscription(int subscriptionType);
 
@@ -210,6 +222,9 @@ private:
     
     /// @brief return true if the node idNode has received the message msg
     static bool msgIsReceivedByNode(AppMessage& msg, int idNode);
+    
+    /// @brief return true if time interval is expired 
+    static bool IsTimeToSendAlert(int nodeId, int timestep);
 
     /// @brief CAM area definition
     static Area m_camArea;
@@ -231,7 +246,7 @@ private:
     
     /// @brief Radius where the alert is propaging
     static float m_alertRadius;
-    
+     
     /// @brief The time out of a alert
     static int m_alertTimeOut; 
     
@@ -239,7 +254,17 @@ private:
     static float m_alertSpeedlimit;    
     
     /// @brief Sending alert actif or not
-    static bool m_alertActif;               
+    static bool m_alertActif;       
+    
+    /// @brief Minimum interval between broadcast alert
+    static int m_alertInterval; 
+        
+    /// @brief Duration of slowdown in second
+    static int m_durationOfSlowdown;   
+    
+    /// @brief if the vehicule is slowed, no resend alert
+    static bool m_noAlertMessageIfIsSlowed;     
+            
 };
 
 #endif

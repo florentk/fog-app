@@ -31,9 +31,12 @@
     
     <alert>
       <alertactif value="true"/>
-      <radiusalert value="4000"/>
-      <timeoutalert value="100"/>
+      <radiusalert value="2000"/>
+      <timeoutalert value="200"/>
       <alertspeedlimit value="20"/>     
+      <alertinterval value="5"/>
+      <durationofslowdown value="5"/>
+      <noalertmessageifisslowed value="false"/>
     </alert>          
         
 
