@@ -310,9 +310,11 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
                            mySubsStorage.writeFloat(m_alertSpeedlimit); //Set Maximum speed
                            mySubsStorage.writeInt(m_durationOfSlowdown * 1000); //duration of slow down
                            
-                           m_carLastSpeedChangeTime.erase(destinationId);
+                           
                            m_carLastSlowedTime.erase(destinationId);
                            m_carLastSlowedTime.insert(std::pair<int,int>(destinationId,timestep)); 
+                           m_carLastSpeedChangeTime.erase(destinationId);
+                           m_carLastSpeedChangeTime.insert(std::pair<int,int>(destinationId,timestep)); 
                            	           
 	                         stringstream log;
                            log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " slowed !";
@@ -370,7 +372,7 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
         mySubsStorage.writeInt(nodeId); //Destination node to set its maximum speed.
         mySubsStorage.writeFloat(-1); //Set Maximum speed
         
-        m_carLastSlowedTime.erase(nodeId);
+        //m_carLastSlowedTime.erase(nodeId);
         m_carLastSpeedChangeTime.erase(nodeId);
 
         stringstream log;
@@ -390,8 +392,8 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
       mySubsStorage.writeFloat(m_alertSpeedlimit); //Set fog speed limit
       
       m_carLastSlowedTime.erase(nodeId);
-      m_carLastSpeedChangeTime.erase(nodeId);
-      m_carLastSpeedChangeTime.insert(std::pair<int,int>(nodeId,timestep)); 
+      /*m_carLastSpeedChangeTime.erase(nodeId);
+      m_carLastSpeedChangeTime.insert(std::pair<int,int>(nodeId,timestep)); */
 
       stringstream log;
       log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << nodeId << " end of slowing   !";

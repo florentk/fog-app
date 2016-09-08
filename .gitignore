@@ -16,3 +16,6 @@ libtool
 *.dump
 *.log
 log-archive
+*.pdf
+*.xml
+*.cfg

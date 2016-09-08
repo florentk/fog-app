@@ -1,0 +1,6 @@
+#Densitiy	with alert	without alert
+500	0	0
+1000	2	0
+1500	5	10
+3000	7	12
+4500	3 	6
