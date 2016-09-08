@@ -48,7 +48,7 @@ class VehicleHandler( xml.sax.ContentHandler ):
           else:
             ttc = (dist - self.LENGHT) / rel_speed
           if (ttc < self.THRESHOLD): 
-            print self.time, self.lane_id, id_vehic, pos, speed, self.last_id_vehic, self.last_pos, self.last_speed, dist, rel_speed, ttc
+            #print self.time, self.lane_id, id_vehic, pos, speed, self.last_id_vehic, self.last_pos, self.last_speed, dist, rel_speed, ttc
             self.nb_no_safety += 1
           
          self.last_pos = pos

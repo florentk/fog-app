@@ -49,6 +49,7 @@ vector<Vehicle> ApplicationLogic::m_vehiclesInFog;
 vector<AppMessage> ApplicationLogic::m_messages;
 map<int,bool> ApplicationLogic::m_carRxSubs;
 map<int, int> ApplicationLogic::m_carLastSpeedChangeTime;   
+map<int, int> ApplicationLogic::m_carLastSlowedTime;   
 map<int, int> ApplicationLogic::m_vehiclesInFogOnceTime; 
 map<int, int> ApplicationLogic::m_lastBroadcast; 
 
@@ -295,7 +296,7 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
                 //if(!NodeIsSlowed(destinationId,timestep)){
 
                    
-             /*      switch ((*it_).action){
+                   switch ((*it_).action){
                         case VALUE_SLOW_DOWN:
                         {
                            //Command length
@@ -308,15 +309,19 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
                            mySubsStorage.writeInt(destinationId); //Destination node to set its maximum speed.
                            mySubsStorage.writeFloat(m_alertSpeedlimit); //Set Maximum speed
                            mySubsStorage.writeInt(m_durationOfSlowdown * 1000); //duration of slow down
+                           
+                           m_carLastSpeedChangeTime.erase(destinationId);
+                           m_carLastSlowedTime.erase(destinationId);
+                           m_carLastSlowedTime.insert(std::pair<int,int>(destinationId,timestep)); 
                            	           
-	                   stringstream log;
+	                         stringstream log;
                            log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " slowed !";
                            Log::Write((log.str()).c_str(), kLogLevelInfo); 
                            break;
                         }
                         
                         case VALUE_SET_SPEED:
-                        {*/
+                        {
                            //Command length
                            mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 4 );
                            //Command type
@@ -326,12 +331,17 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
                            mySubsStorage.writeUnsignedByte(VALUE_SET_SPEED); //to change the speed
                            mySubsStorage.writeInt(destinationId); //Destination node to set its maximum speed.
                            mySubsStorage.writeFloat(m_alertSpeedlimit); //Set Maximum speed
+                           
+                           //keep the time when vehicle change her speed
+                           m_carLastSlowedTime.erase(destinationId);
+                           m_carLastSpeedChangeTime.erase(destinationId);
+                           m_carLastSpeedChangeTime.insert(std::pair<int,int>(destinationId,timestep)); 
                            	           
-	                   stringstream log;
+	                         stringstream log;
                            log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " break !";
                            Log::Write((log.str()).c_str(), kLogLevelInfo); 
 
-                /*        }    
+                       }    
                         
                         default :
                         {
@@ -339,57 +349,55 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
                            log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " bad action";
                            Log::Write((log.str()).c_str(), kLogLevelError); 
                         }                       
-                  }*/
+                  }
                    
-                   //keep the time when vehicle change her speed
-                  m_carLastSpeedChangeTime.erase(destinationId);
-	                m_carLastSpeedChangeTime.insert(std::pair<int,int>(destinationId,timestep)); 
                  return  mySubsStorage;                    
-               //}
+               }
             }
-	   }
-
-
-
-  }
+      }
   
 	   if (AlertIsExpired(nodeId,timestep)){
-	       //Restore initial speed limit
+        //Restore initial speed limit
 
-           
-                   //Command length
-	           mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 4);
-	           //Command type
-	           mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
-	           mySubsStorage.writeUnsignedByte(SUB_APP_CMD_TRAFF_SIM);
-	           mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE
-	           mySubsStorage.writeUnsignedByte(VALUE_SET_SPEED); //to change the speed
-	           mySubsStorage.writeInt(nodeId); //Destination node to set its maximum speed.
-	           mySubsStorage.writeFloat(-1); //Set Maximum speed
-	           
-	           stringstream log;
-                   log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << nodeId << " speed restored !";
-                   Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
+        //Command length
+        mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 4);
+        //Command type
+        mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
+        mySubsStorage.writeUnsignedByte(SUB_APP_CMD_TRAFF_SIM);
+        mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE
+        mySubsStorage.writeUnsignedByte(VALUE_SET_SPEED); //to change the speed
+        mySubsStorage.writeInt(nodeId); //Destination node to set its maximum speed.
+        mySubsStorage.writeFloat(-1); //Set Maximum speed
+        
+        m_carLastSlowedTime.erase(nodeId);
+        m_carLastSpeedChangeTime.erase(nodeId);
+
+        stringstream log;
+        log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << nodeId << " speed restored !";
+        Log::Write((log.str()).c_str(), kLogLevelInfo); 
         return  mySubsStorage;   
-	   }
+	   }else if (NodeEndingSlowed(nodeId,timestep)){
 
-	  /*if (NodeCurrentSlowed(nodeId,timestep)){
+      //Command length
+      mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 4);
+      //Command type
+      mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
+      mySubsStorage.writeUnsignedByte(SUB_APP_CMD_TRAFF_SIM);
+      mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE
+      mySubsStorage.writeUnsignedByte(VALUE_SET_SPEED); //to change the speed
+      mySubsStorage.writeInt(nodeId); //Destination node to set its maximum speed.
+      mySubsStorage.writeFloat(m_alertSpeedlimit); //Set fog speed limit
+      
+      m_carLastSlowedTime.erase(nodeId);
+      m_carLastSpeedChangeTime.erase(nodeId);
+      m_carLastSpeedChangeTime.insert(std::pair<int,int>(nodeId,timestep)); 
 
-                   //Command length
-                   mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 4);
-                   //Command type
-                   mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
-                   mySubsStorage.writeUnsignedByte(SUB_APP_CMD_TRAFF_SIM);
-                   mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE
-                   mySubsStorage.writeUnsignedByte(VALUE_SET_SPEED); //to change the speed
-                   mySubsStorage.writeInt(nodeId); //Destination node to set its maximum speed.
-                   mySubsStorage.writeFloat(m_alertSpeedlimit); //Set fog speed limit
-
-                   stringstream log;
-                   log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << nodeId << " end of slowing   !";
-                   Log::Write((log.str()).c_str(), kLogLevelInfo);
-
-          } */
+      stringstream log;
+      log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << nodeId << " end of slowing   !";
+      Log::Write((log.str()).c_str(), kLogLevelInfo);
+      return  mySubsStorage; 
+  } 
   
   return  mySubsStorage; 
 }
@@ -423,7 +431,7 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
           
           message.messageId = ++m_messageCounter;
           message.status = kToBeScheduled;  // JHNOTE: registers a APP_MSG_Sends subscription        
-          message.action = VALUE_SET_SPEED; 
+          message.action = VALUE_SLOW_DOWN; 
           m_messages.push_back(message);
           
           m_lastBroadcast.erase(senderId);
@@ -526,14 +534,14 @@ ApplicationLogic::AlertIsExpired(int nodeId, int timestep){
 }
 
 bool 
-ApplicationLogic::NodeCurrentSlowed(int nodeId, int timestep){
-    std::map<int,int>::iterator it = m_carLastSpeedChangeTime.find(nodeId);
+ApplicationLogic::NodeEndingSlowed(int nodeId, int timestep){
+    std::map<int,int>::iterator it = m_carLastSlowedTime.find(nodeId);
 
 
-    if (it == m_carLastSpeedChangeTime.end()) 
+    if (it == m_carLastSlowedTime.end()) 
         //This vehicle has not changed her speed
         return false;
-    else if (timestep <= it->second+m_durationOfSlowdown)
+    else if (timestep >= it->second+m_durationOfSlowdown)
         return true;
     else {
         return false;

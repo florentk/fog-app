@@ -112,6 +112,9 @@ public:
     
      /// @brief The collection of vehicles, which speed changed : pair of (nodeid,time) 
     static std::map<int, int> m_carLastSpeedChangeTime; 
+    
+     /// @brief The collection of vehicles, which slow start : pair of (nodeid,time) 
+    static std::map<int, int> m_carLastSlowedTime;     
 
     /// @brief The collection of vehicles in the hazardous zone once : pair of (nodeid, time)
     static std::map<int, int> m_vehiclesInFogOnceTime;  
@@ -208,11 +211,11 @@ private:
     /// @brief return true if the alert of msg is expired
     static bool AlertIsExpired(int nodeId, int timestep);
     
-    /// @brief return true if the vehicle is already slowed (current alert)
-    static bool NodeIsSlowed(int nodeId, int timestep);
+    /// @brief return true if the vehicle has end slowed (current alert)
+    static bool NodeEndingSlowed(int nodeId, int timestep);
     
     /// @brief return true if the vehicle is current slowed
-    static bool NodeCurrentSlowed(int nodeId, int timestep);
+    static bool NodeIsSlowed(int nodeId, int timestep);
 
     /// @brief return true if the fog is active
     static bool FogIsActive(int timestep);
