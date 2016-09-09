@@ -9,10 +9,10 @@
     </vTypeDistribution>   
 
 
-   <flow id="0" type="vehicles" depart="0"  begin="0" end="100" vehsPerHour="1500">
+   <flow id="0" type="vehicles" depart="0"  begin="0" end="100" vehsPerHour="1600">
          <route  color="1,1,0" edges="gneE0"/>
    </flow>
-   <flow id="1" type="vehicles" depart="0"  begin="0" end="100" vehsPerHour="1500">
+   <flow id="1" type="vehicles" depart="0"  begin="0" end="100" vehsPerHour="1400">
          <route  color="1,1,0" edges="-gneE0"/>  
     </flow>
 </routes>
