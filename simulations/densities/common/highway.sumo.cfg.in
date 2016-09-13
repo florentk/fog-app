@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="highway.net.xml"/>
+        <route-files value="highway.rou.xml"/>
+    </input>
+
+    <output>
+        <netstate-dump value="../log/sumo/netstate.dump"/>
+    </output>
+
+    <time>
+        <begin value="0"/>
+        <end value="280"/>
+    </time>
+
+    <traci_server>
+        <remote-port value="5500"/>
+    </traci_server>
+
+    <random_number>
+        <seed value="SEED_NUMBER_INPUT"/>
+    </random_number>
+
+</configuration>
