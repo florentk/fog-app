@@ -1,13 +1,9 @@
 /****************************************************************************/
 /// @file    application-logic.h
-/// @author  Julen Maneros
-/// @date    10.10.2010
+/// @author  Florent Kaisser, Julen Maneros
+/// @date    23.09.2016
 ///
-// iTETRIS Cooperative ITS demo application related logic
-/****************************************************************************/
-// iTETRIS; see http://www.ict-itetris.eu/
-// Copyright 2008-2010 iTETRIS consortium
-/****************************************************************************/
+// iTETRIS Fog application related logic
 #ifndef APPLICATIONLOGIC_H
 #define APPLICATIONLOGIC_H
 

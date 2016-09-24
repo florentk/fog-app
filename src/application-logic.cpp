@@ -1,13 +1,10 @@
 /****************************************************************************/
 /// @file    application-logic.cpp
+/// @author  Florent Kaisser
 /// @author  Jerome Haerri, with help of Panos Matzakos and Remi Barbier 
-/// @date    10.05.2012
+/// @date    23.09.2016
 ///
-// iTETRIS Cooperative ITS demo application related logic
-/****************************************************************************/
-// iTETRIS; see http://www.ict-itetris.eu/
-// Copyright 2008-2010 iTETRIS consortium
-/****************************************************************************/
+// iTETRIS Fog application related logic
 
 // ===========================================================================
 // included modules
@@ -38,24 +35,13 @@ using namespace std;
 // ===========================================================================
 // static member variables
 // ===========================================================================
-bool ApplicationLogic::m_camAreaIsSet = false;
-bool ApplicationLogic::m_returnCarAreaIsSet = false;
 
-
-vector<Vehicle> ApplicationLogic::m_vehiclesInFog;
-
-
-
-vector<AppMessage> ApplicationLogic::m_messages;
-map<int,bool> ApplicationLogic::m_carRxSubs;
-map<int, int> ApplicationLogic::m_carLastSpeedChangeTime;   
-map<int, int> ApplicationLogic::m_carLastSlowedTime;   
-map<int, int> ApplicationLogic::m_vehiclesInFogOnceTime; 
-map<int, int> ApplicationLogic::m_lastBroadcast; 
-
-int ApplicationLogic::m_messageCounter = 0;
+/////////////////////
+//Application config : initialisation on start, then no modification
 Area ApplicationLogic::m_camArea;
 Area ApplicationLogic::m_carArea;
+bool ApplicationLogic::m_camAreaIsSet = false;
+bool ApplicationLogic::m_returnCarAreaIsSet = false;
 int ApplicationLogic::m_appStartTimeStep;
 Area ApplicationLogic::m_fogArea;        
 int ApplicationLogic::m_fogStartTimeStep;
@@ -67,24 +53,37 @@ bool ApplicationLogic::m_alertActif=false;
 int ApplicationLogic::m_alertInterval=1; 
 int ApplicationLogic::m_durationOfSlowdown=5;   
 bool ApplicationLogic::m_noAlertMessageIfIsSlowed=false;  
+/////////////////////
 
-// ===========================================================================
-// method definitions
-// ===========================================================================
-Area
-ApplicationLogic::GetCamArea()
-{
-    m_camAreaIsSet = true;
-    return m_camArea;
-}
+/////////////////////
+// Counter
+int ApplicationLogic::m_messageCounter = 0;
+/////////////////////
 
-Area
-ApplicationLogic::GetReturningCarArea()
-{
-    m_returnCarAreaIsSet = true;
-    return m_carArea;
-}
+/////////////////////
+// State variables
 
+//----------------------
+//state of messages
+vector<AppMessage> ApplicationLogic::m_messages;
+//----------------------
+
+//----------------------
+// state of vehicles/cars
+vector<Vehicle> ApplicationLogic::m_vehiclesInFog;
+// mapped on car id
+map<int, bool> ApplicationLogic::m_carRxSubs;
+map<int, int> ApplicationLogic::m_carLastSpeedChangeTime;   
+map<int, int> ApplicationLogic::m_carLastSlowedTime;   
+map<int, int> ApplicationLogic::m_vehiclesInFogOnceTime; 
+map<int, int> ApplicationLogic::m_lastBroadcast; 
+//----------------------
+
+/////////////////////
+
+
+//////////////////////////////////////////////////
+//iCS callback methods
 bool
 ApplicationLogic::DropSubscription(int subscriptionType)
 {
@@ -138,7 +137,7 @@ ApplicationLogic::RequestReceiveSubscription(int nodeId, int timestep) {
     Log::Write((log.str()).c_str(), kLogLevelInfo);
     
     // command length    
-    mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 2 + 1 + 1 + 2 + 4);
+    mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 /*+ 4 + 2 + 1 + 1 + 2 + 4*/);
     // command type
     mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
     // subscription type
@@ -146,8 +145,9 @@ ApplicationLogic::RequestReceiveSubscription(int nodeId, int timestep) {
     // HEADER_APP_MSG_TYPE
    // This demo-app only sends one type of message (to stop a vehicles): the code is 0x01 ; if we need to send another type, please change to a different number
     mySubsStorage.writeUnsignedByte(0x01);
-    // Only destID
-    mySubsStorage.writeUnsignedByte(0x04); 
+    
+    /*// Only destID
+    mySubsStorage.writeUnsignedByte(0x00); 
     //Target Node id for unicast reception
     mySubsStorage.writeInt(nodeId);	// the UNICAST target/dest ID ; if not present, it would mean: ubiquitous mode
     //Length of rest of the command (payload length). 
@@ -160,7 +160,7 @@ ApplicationLogic::RequestReceiveSubscription(int nodeId, int timestep) {
     mySubsStorage.writeShort(1);
     //RSU ID is SENDER_ID
     mySubsStorage.writeInt(SENDER_ID); // TODO remove the hard coded RSU ID as source of the UNICAST reception	
-   
+   */
   }
   return mySubsStorage;
 }
@@ -492,7 +492,11 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
 
     return results;
 }
+//END iCS callback methods
+//////////////////////////////////////////////////
 
+//////////////////////////////////////////////////
+// Support methods
 bool 
 ApplicationLogic::IsTimeToSendAlert(int nodeId, int timestep){
     std::map<int,int>::iterator it = m_lastBroadcast.find(nodeId);
@@ -615,6 +619,11 @@ ApplicationLogic::msgIsReceivedByNode(AppMessage& msg, int idNode){
     
     return false;
 }
+// END Support methods
+//////////////////////////////////////////////////
+
+//////////////////////////////////////////////////
+// Setters
 
 int
 ApplicationLogic::SetCamArea(float x, float y, float radius)
@@ -827,4 +836,22 @@ int ApplicationLogic::SetNoAlertMessageIfIsSlowed(bool enable){
    
     return EXIT_SUCCESS;   
 }  
+//END Setters
+//////////////////////////////////////////////////
 
+//////////////////////////////////////////////////
+// Getters
+
+Area ApplicationLogic::GetCamArea()
+{
+    m_camAreaIsSet = true;
+    return m_camArea;
+}
+
+Area ApplicationLogic::GetReturningCarArea()
+{
+    m_returnCarAreaIsSet = true;
+    return m_carArea;
+}
+
+//////////////////////////////////////////////////
