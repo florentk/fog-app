@@ -1,9 +1,7 @@
 Makefile*
 *.a
 *.o
-config*
 .deps*
-*log*.txt*
 *.cache
 *.m4
 stamp*
@@ -16,3 +14,10 @@ libtool
 *.dump
 *.log
 *.pdf
+simulations/densities*
+simulations/results*
+config.guess
+config.status
+config.sub
+configure
+src/config.h
