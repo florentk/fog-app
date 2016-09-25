@@ -137,7 +137,7 @@ ApplicationLogic::RequestReceiveSubscription(int nodeId, int timestep) {
     Log::Write((log.str()).c_str(), kLogLevelInfo);
     
     // command length    
-    mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 /*+ 4 + 2 + 1 + 1 + 2 + 4*/);
+    mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 2 + 1 + 1 + 2 + 4);
     // command type
     mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
     // subscription type
@@ -146,21 +146,21 @@ ApplicationLogic::RequestReceiveSubscription(int nodeId, int timestep) {
    // This demo-app only sends one type of message (to stop a vehicles): the code is 0x01 ; if we need to send another type, please change to a different number
     mySubsStorage.writeUnsignedByte(0x01);
     
-    /*// Only destID
-    mySubsStorage.writeUnsignedByte(0x00); 
-    //Target Node id for unicast reception
-    mySubsStorage.writeInt(nodeId);	// the UNICAST target/dest ID ; if not present, it would mean: ubiquitous mode
+    // Only destID
+    mySubsStorage.writeUnsignedByte(0x04); 
+    //Target Node id , its for me
+    mySubsStorage.writeInt(nodeId);	
     //Length of rest of the command (payload length). 
     mySubsStorage.writeShort(500);
     //Unicast transmissions
     mySubsStorage.writeUnsignedByte(EXT_HEADER_TYPE_GEOBROADCAST);
     //Additional header specifying the sources
     mySubsStorage.writeUnsignedByte(EXT_HEADER__VALUE_BLOCK_IDs);
-    //Number of Sources (currently only RSU) // if not present, it would mean: we listen to packets from any source node
+    //Number of Sources (currently only RSU)
     mySubsStorage.writeShort(1);
-    //RSU ID is SENDER_ID
-    mySubsStorage.writeInt(SENDER_ID); // TODO remove the hard coded RSU ID as source of the UNICAST reception	
-   */
+    //-1 for broadcast
+    mySubsStorage.writeInt(-1);
+  
   }
   return mySubsStorage;
 }

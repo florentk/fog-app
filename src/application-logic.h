@@ -7,9 +7,6 @@
 #ifndef APPLICATIONLOGIC_H
 #define APPLICATIONLOGIC_H
 
-#define SENDER_ID 2
-#define SPEED_LIMIT 33
-
 #include "foreign/tcpip/storage.h"
 #include <vector>
 #include <map>
