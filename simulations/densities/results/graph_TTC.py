@@ -31,10 +31,11 @@ pp = PdfPages('Cumul of TTC.pdf')
 fig = plt.figure()
 ax = fig.add_subplot(111)
 
-rects1 = ax.bar(ind, ttc_without_alert, width, color='red', yerr = ttc_without_alert_err,
-  ecolor = 'black', capsize = 10)
-rects2 = ax.bar(ind+width, ttc_whith_alert , width, color='green', yerr = ttc_whith_alert_err,
-  ecolor = 'black', capsize = 10)
+#rects1 = ax.bar(ind, ttc_without_alert, width, color='red', yerr = ttc_without_alert_err,  ecolor = 'black', capsize = 10)
+#rects2 = ax.bar(ind+width, ttc_whith_alert , width, color='green', yerr = ttc_whith_alert_err,  ecolor = 'black', capsize = 10)
+
+rects1 = ax.bar(ind, ttc_without_alert, width, color='red')
+rects2 = ax.bar(ind+width, ttc_whith_alert , width, color='green')
 
 ax.set_xlim(-width,len(ind)+width)
 ax.set_ylim(0,17)

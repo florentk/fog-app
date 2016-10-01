@@ -18,10 +18,11 @@ pp = PdfPages('rate.pdf')
 fig = plt.figure()
 ax = fig.add_subplot(111)
 
-ax.errorbar(densities,rate,yerr=rate_err,ecolor='black', capsize = 10)	
+#ax.errorbar(densities,rate,yerr=rate_err,ecolor='black', capsize = 10)	
+ax.plot(densities,rate,marker='+',mec='k',ls='solid',lw=1)	
 		
 ax.set_xlabel('Number of vehicles per hour')
-ax.set_ylabel('Rate of vehicle which recept alert')
+ax.set_ylabel('Reception Rate')
 ax.set_xlim(0,5000)
 ax.set_ylim(0.8,1.0)
 #legend(loc=0)

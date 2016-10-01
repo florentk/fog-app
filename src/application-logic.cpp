@@ -1,8 +1,7 @@
 /****************************************************************************/
 /// @file    application-logic.cpp
 /// @author  Florent Kaisser
-/// @author  Jerome Haerri, with help of Panos Matzakos and Remi Barbier 
-/// @date    23.09.2016
+/// @date    29.09.2016
 ///
 // iTETRIS Fog application related logic
 
@@ -118,10 +117,15 @@ ApplicationLogic::ProcessSubscriptionCarsInZone(vector<Vehicle>& vehicles)
     return true;
 }
 
+
 tcpip::Storage
 ApplicationLogic::RequestReceiveSubscription(int nodeId, int timestep) {
 
     tcpip::Storage mySubsStorage;
+    
+    stringstream log;
+    log << "APP --> [ApplicationLogic] RequestReceiveSubscription() Node ID " << nodeId << " subscribing to an APP_MSG_RECEIVE subscription at time "<<timestep<< "";
+    Log::Write((log.str()).c_str(), kLogLevelInfo);
     
     std::map<int,bool>::iterator it = m_carRxSubs.find(nodeId);
     if ((it == m_carRxSubs.end()) || ((*it).second == false)) { // means that car with ID nodeId has not registered a RX subscription yet
@@ -131,44 +135,16 @@ ApplicationLogic::RequestReceiveSubscription(int nodeId, int timestep) {
       else {
         (*it).second == true;  // will not ask twice...
       }
-    // preparing anwer...
-    stringstream log;
-    log << "APP --> [ApplicationLogic] RequestReceiveSubscription() Node ID " << nodeId << " subscribing to an APP_MSG_RECEIVE subscription at time "<<timestep<< "";
-    Log::Write((log.str()).c_str(), kLogLevelInfo);
-    
-    // command length    
-    mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 2 + 1 + 1 + 2 + 4);
-    // command type
-    mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
-    // subscription type
-    mySubsStorage.writeUnsignedByte(SUB_APP_MSG_RECEIVE);
-    // HEADER_APP_MSG_TYPE
-   // This demo-app only sends one type of message (to stop a vehicles): the code is 0x01 ; if we need to send another type, please change to a different number
-    mySubsStorage.writeUnsignedByte(0x01);
-    
-    // Only destID
-    mySubsStorage.writeUnsignedByte(0x04); 
-    //Target Node id , its for me
-    mySubsStorage.writeInt(nodeId);	
-    //Length of rest of the command (payload length). 
-    mySubsStorage.writeShort(500);
-    //Unicast transmissions
-    mySubsStorage.writeUnsignedByte(EXT_HEADER_TYPE_GEOBROADCAST);
-    //Additional header specifying the sources
-    mySubsStorage.writeUnsignedByte(EXT_HEADER__VALUE_BLOCK_IDs);
-    //Number of Sources (currently only RSU)
-    mySubsStorage.writeShort(1);
-    //-1 for broadcast
-    mySubsStorage.writeInt(-1);
+
+	  CreateGeobroadcastReceiveSubscription(nodeId, timestep, mySubsStorage);
   
   }
   return mySubsStorage;
 }
 
+
 bool
 ApplicationLogic::ProcessReceptionOfApplicationMessage(vector<AppMessage>& messages){
-
-
 
     // Loop messages received by the APP_MSG_RECEIVE Subscription
     for (vector<AppMessage>::iterator it = messages.begin(); it != messages.end() ; ++it) {
@@ -178,26 +154,20 @@ ApplicationLogic::ProcessReceptionOfApplicationMessage(vector<AppMessage>& messa
         // Match message with the registered by the App
         for (vector<AppMessage>::iterator it_ = m_messages.begin(); it_ != m_messages.end() ; ++it_) {
             int inputId = (*it).messageId; // received from the subscription
-            int registeredId = (*it_).messageId; // id registered by App
-            TrafficApplicationResultMessageState status =  (*it_).status;
+            AppMessage& registeredMsg = *it_;
+            int registeredId = registeredMsg.messageId; // id registered by App
+            TrafficApplicationResultMessageState status =  registeredMsg.status;
             
             if ((inputId == registeredId) && (status == kScheduled || status == kToBeApplied)) {
-                
-                (*it_).status = kToBeApplied;  // JHNOTE: changed from kScheduled to kToBeApplied -> registrering for a traf_sim subs
-                (*it_).receivedIds.push_back(destinationId);
+               
+                UpdateAppMessageStatus(registeredMsg, kToBeApplied);
+                AddReceiverAppMessage(registeredMsg, destinationId);
                 
                 stringstream log;
                 log << "APP --> [ApplicationLogic] ProcessReceptionOfApplicationMessage() Message " << (*it).messageId << " received by " <<  destinationId;
                 Log::Write((log.str()).c_str(), kLogLevelInfo); 
                 
-                /*log << "APP --> [ApplicationLogic] ProcessReceptionOfApplicationMessage() Message " << registeredId << " is registered and changed status from kScheduled to kToBeApplied";
-                Log::Write((log.str()).c_str(), kLogLevelInfo); */
             } 
-            /*else {
-                 stringstream log;
-                log << "APP --> [ApplicationLogic]  ProcessReceptionOfApplicationMessage() Message " << registeredId << " not registered.";
-                Log::Write((log.str()).c_str(), kLogLevelWarning);
-            }*/
         }
     }
     return  true;
@@ -229,199 +199,76 @@ ApplicationLogic::ProcessMessageNotifications(vector<AppMessage>& messages)
     return  true;
 }
 
+                         
+                           
+
 /* We cycle here at each request for new subscription and see if we have messages that are:
  *       - in stage kToBeScheduled. If so,
- *           we change to kScheduled and request to send a APP_MSG_SEND subscription.
+ *           we change to kScheduled and request to broadcast a message
  *       - in stage kToBeApplied, If so,
- *           we change to kApplied and request to send a APP_CMD_TRAFFIC_SIM subscription
+ *           we change to kApplied and request to send an action
 */
 tcpip::Storage 
 ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
   
-  tcpip::Storage mySubsStorage;
+    tcpip::Storage mySubsStorage;
 
-  for (vector<AppMessage>::iterator it_ = m_messages.begin(); it_ != m_messages.end() ; ++it_) {
-       //if no message received by nodeId => not process the message
-       //if ( ! msgIsReceivedByNode(*it_, nodeId) ) continue;
-  
-       if (((*it_).status == kToBeScheduled) && ((*it_).senderId == nodeId)) { // we need to send an APP_MSG_SEND and it should be a subscription created by me
-           
-           (*it_).status = kScheduled;  // changed from kToBeScheduled to kScheduled
-          
-           stringstream log;
-           log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Message " << (*it_).messageId << " is changed status from kToBeScheduled to kScheduled";
-           Log::Write((log.str()).c_str(), kLogLevelInfo); 
+    for (vector<AppMessage>::iterator it_ = m_messages.begin(); it_ != m_messages.end() ; ++it_) {
 
-           //Command length
-	       mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 1 + 1 + 4 + 1 + 2 + 4 + 1 + 1 + 1 + 1 + 4+ 4 + 4);
-	       //Command type
-	       mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
-	       mySubsStorage.writeUnsignedByte(SUB_APP_MSG_SEND);
-	       mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE 
-               // This demo-app only sends one type of message (to stop a vehicles): the code is 0x01 ; if we need to send another type, please change to a different number
-	       mySubsStorage.writeUnsignedByte(0x0F);  // in bits, it is: 1111 : comm profile, the prefered techno and a senderID and the message lifetime
-	       mySubsStorage.writeUnsignedByte(0xFF);  // unsigned char preferredRATs = 0xFF;
-	       mySubsStorage.writeUnsignedByte(0xFF);  // unsigned char commProfile = 0xFF;
-	       mySubsStorage.writeInt((*it_).senderId);
-	       mySubsStorage.writeUnsignedByte(2);     // unsigned int msgLifetime = 2;
-               mySubsStorage.writeShort(1024); // m_app_Msg_length
-	       mySubsStorage.writeInt((*it_).messageId); //sequence number
-	       mySubsStorage.writeUnsignedByte(EXT_HEADER_TYPE_GEOBROADCAST); // CommMode
-	       mySubsStorage.writeUnsignedByte(EXT_HEADER__VALUE_BLOCK_AREAs); // CommMode
-	       mySubsStorage.writeUnsignedByte(1);
-	       /*mySubsStorage.writeInt((*it_).destinationId);*/
-	       
-	       mySubsStorage.writeUnsignedByte(EXT_HEADER__CIRCLE); //Area type 
-	       mySubsStorage.writeFloat(m_fogArea.x); //x
-	       mySubsStorage.writeFloat(m_fogArea.y); //y
-	       mySubsStorage.writeFloat(m_fogArea.radius + m_alertRadius);	//radius   		           
+        if (((*it_).status == kToBeScheduled) && ((*it_).senderId == nodeId)) { // we need to broadcast a message
+            UpdateAppMessageStatus((*it_), kScheduled); 
+            CreateGeobroadcastSendSubscription(timestep, (*it_).senderId , (*it_).messageId, mySubsStorage);
+            return  mySubsStorage;  // we break on each successful occurence, as the iCS can only read ONE subscription at a time..we will be called again by the iCS as long as we have something to request
+        }
+        else if (((*it_).status == kToBeApplied) && ((*it_).senderId == nodeId)) { // we need to process message
 
-         return  mySubsStorage;  // we break on each successful occurence, as the iCS can only read ONE subscription at a time..we will be called again by the iCS as long as we have something to request
-       }
-       else if (((*it_).status == kToBeApplied) && ((*it_).senderId == nodeId)) { // we need to send an APP_CMD_TRAFFIC_SIM subscription
-           
-           if ((*it_).receivedIds.size() == 1) {
-             (*it_).status = kApplied;  // changed from kToBeApplied to kApplied 
-            
-             stringstream log;
-             log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Message " << (*it_).messageId << " on " << nodeId << " is changed status from kToBeApplied to kApplied";
-             Log::Write((log.str()).c_str(), kLogLevelInfo); 
-           }
-           
-           for (vector<int>::iterator itDestIds = (*it_).receivedIds.begin(); itDestIds != (*it_).receivedIds.end() ; ++itDestIds) {
-                
-                
-                   int destinationId = (*itDestIds);
-                   (*it_).receivedIds.erase(itDestIds);
-                //if(!NodeIsSlowed(destinationId,timestep)){
-
-                   
-                   switch ((*it_).action){
-                        case VALUE_SLOW_DOWN:
-                        {
-                           //Command length
-                           mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 4 + 4);
-                           //Command type
-                           mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
-                           mySubsStorage.writeUnsignedByte(SUB_APP_CMD_TRAFF_SIM);
-                           mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE
-                           mySubsStorage.writeUnsignedByte(VALUE_SLOW_DOWN); //to change the speed
-                           mySubsStorage.writeInt(destinationId); //Destination node to set its maximum speed.
-                           mySubsStorage.writeFloat(m_alertSpeedlimit); //Set Maximum speed
-                           mySubsStorage.writeInt(m_durationOfSlowdown * 1000); //duration of slow down
-                           
-                           
-                           m_carLastSlowedTime.erase(destinationId);
-                           m_carLastSlowedTime.insert(std::pair<int,int>(destinationId,timestep)); 
-                           m_carLastSpeedChangeTime.erase(destinationId);
-                           m_carLastSpeedChangeTime.insert(std::pair<int,int>(destinationId,timestep)); 
-                           	           
-	                         stringstream log;
-                           log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " slowed !";
-                           Log::Write((log.str()).c_str(), kLogLevelInfo); 
-                           break;
-                        }
-                        
-                        case VALUE_SET_SPEED:
-                        {
-                           //Command length
-                           mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 4 );
-                           //Command type
-                           mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
-                           mySubsStorage.writeUnsignedByte(SUB_APP_CMD_TRAFF_SIM);
-                           mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE
-                           mySubsStorage.writeUnsignedByte(VALUE_SET_SPEED); //to change the speed
-                           mySubsStorage.writeInt(destinationId); //Destination node to set its maximum speed.
-                           mySubsStorage.writeFloat(m_alertSpeedlimit); //Set Maximum speed
-                           
-                           //keep the time when vehicle change her speed
-                           m_carLastSlowedTime.erase(destinationId);
-                           m_carLastSpeedChangeTime.erase(destinationId);
-                           m_carLastSpeedChangeTime.insert(std::pair<int,int>(destinationId,timestep)); 
-                           	           
-	                         stringstream log;
-                           log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " break !";
-                           Log::Write((log.str()).c_str(), kLogLevelInfo); 
-
-                       }    
-                        
-                        default :
-                        {
-                           stringstream log;
-                           log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " bad action";
-                           Log::Write((log.str()).c_str(), kLogLevelError); 
-                        }                       
-                  }
-                   
-                 return  mySubsStorage;                    
-               }
-            }
-      }
-  
-	   if (AlertIsExpired(nodeId,timestep)){
-        //Restore initial speed limit
-
-
-        //Command length
-        mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 4);
-        //Command type
-        mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
-        mySubsStorage.writeUnsignedByte(SUB_APP_CMD_TRAFF_SIM);
-        mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE
-        mySubsStorage.writeUnsignedByte(VALUE_SET_SPEED); //to change the speed
-        mySubsStorage.writeInt(nodeId); //Destination node to set its maximum speed.
-        mySubsStorage.writeFloat(-1); //Set Maximum speed
+            if ((*it_).receivedIds.size() == 1)           
+                UpdateAppMessageStatus((*it_), kApplied); 
         
-        //m_carLastSlowedTime.erase(nodeId);
-        m_carLastSpeedChangeTime.erase(nodeId);
+            //for each destination of this message
+            for (vector<int>::iterator itDestIds = (*it_).receivedIds.begin(); itDestIds != (*it_).receivedIds.end() ; ++itDestIds) {
+                int destinationId = (*itDestIds);
+                (*it_).receivedIds.erase(itDestIds);
 
-        stringstream log;
-        log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << nodeId << " speed restored !";
-        Log::Write((log.str()).c_str(), kLogLevelInfo); 
+                //lauch action
+                LauchAction(timestep,(*it_).action,destinationId,mySubsStorage);
+                return  mySubsStorage;                    
+            }
+        }
+    }
+
+    //check if alert is expired
+    if (AlertIsExpired(nodeId,timestep)){
+        //Restore initial speed limit
+        ResetSpeed(timestep,nodeId,mySubsStorage);
         return  mySubsStorage;   
-	   }else if (NodeEndingSlowed(nodeId,timestep)){
+    }
+    
+    //check if alert slow down is expired
+    if (NodeEndingSlowed(nodeId,timestep)){
+        //End of slow down -> set reduce speed
+        EndSlowDown(timestep,nodeId, mySubsStorage);
+        return  mySubsStorage; 
+    } 
 
-      //Command length
-      mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 4);
-      //Command type
-      mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
-      mySubsStorage.writeUnsignedByte(SUB_APP_CMD_TRAFF_SIM);
-      mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE
-      mySubsStorage.writeUnsignedByte(VALUE_SET_SPEED); //to change the speed
-      mySubsStorage.writeInt(nodeId); //Destination node to set its maximum speed.
-      mySubsStorage.writeFloat(m_alertSpeedlimit); //Set fog speed limit
-      
-      m_carLastSlowedTime.erase(nodeId);
-      /*m_carLastSpeedChangeTime.erase(nodeId);
-      m_carLastSpeedChangeTime.insert(std::pair<int,int>(nodeId,timestep)); */
-
-      stringstream log;
-      log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << nodeId << " end of slowing   !";
-      Log::Write((log.str()).c_str(), kLogLevelInfo);
-      return  mySubsStorage; 
-  } 
-  
-  return  mySubsStorage; 
+    //Notify no subscription
+    return  mySubsStorage; 
 }
+
 
 // even though we do not need to return a value to the iCS result container (we use the VOID_RESULT_CONTAINER),  
 // we still need to initialize the procedure...
 vector<AppMessage>
 ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
 {
-   bool isSlowed = NodeIsSlowed(senderId,timestep);
-   vector<AppMessage> results;
-   if (     timestep >= m_appStartTimeStep 
+    bool isSlowed = NodeIsSlowed(senderId,timestep);
+    vector<AppMessage> results;
+    if (     timestep >= m_appStartTimeStep 
        &&   FogIsActive(timestep) 
        &&   IsInFog(senderId)
-     ) { 
+    ) { 
          
-	      //Init message
-        AppMessage message;
-        message.senderId = senderId;
-        message.destinationId = 0; //broadcast !
-        message.createdTimeStep = timestep;
-	      
+	    //test if need to broacast a new alert
         if(  m_alertActif 
           && !(m_noAlertMessageIfIsSlowed && isSlowed) 
           && IsTimeToSendAlert(senderId,timestep)
@@ -431,49 +278,21 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
           log<< "Vehicle " << senderId << " broadcast alert at " << timestep;
           Log::Write((log.str()).c_str(), kLogLevelInfo);
           
-          message.messageId = ++m_messageCounter;
-          message.status = kToBeScheduled;  // JHNOTE: registers a APP_MSG_Sends subscription        
-          message.action = VALUE_SLOW_DOWN; 
-          m_messages.push_back(message);
+          NewAppMessage(timestep,senderId,VALUE_SLOW_DOWN,kToBeScheduled);
           
+          //keep time when last broadcast
           m_lastBroadcast.erase(senderId);
           m_lastBroadcast.insert(std::pair<int,int>(senderId,timestep));
         }			
-           
-        
+                   
         //Test if is the first time which vehicle enter in alert zone
-	      if(m_vehiclesInFogOnceTime.find(senderId) == m_vehiclesInFogOnceTime.end()){
-           
-           stringstream log; 
-           log << "Vehicle " << senderId << "enter in hazard zone at ";
-           
-                	
-	        //The vehicle is enter in fog now
-		      if(isSlowed){
-		        //Vehicle already slowed (message recevied)
-			      log << timestep;
-			      Log::Write((log.str()).c_str(), kLogLevelInfo);
-			      m_vehiclesInFogOnceTime.insert(std::pair<int,int>(senderId,timestep));
-		      }else{ 
-			      log << -1;
-			      Log::Write((log.str()).c_str(), kLogLevelInfo);
-			      m_vehiclesInFogOnceTime.insert(std::pair<int,int>(senderId,-1)); 
-		      }
-		      
-		
-          //I must reduce my speed ! But break by using VALUE_SET_SPEED.  So, I act as if I already receive this message.
-          message.messageId = ++m_messageCounter;
-          message.status = kToBeApplied; 
-          message.action = VALUE_SET_SPEED;
-          message.receivedIds.push_back(senderId);
-          m_messages.push_back(message);	  
-          
-	      
-		      
-		      
+        if(m_vehiclesInFogOnceTime.find(senderId) == m_vehiclesInFogOnceTime.end()){
+            //For statistics
+            ProcessStatistic(timestep,senderId,isSlowed);
+            //I must reduce my speed ! 		      
+		    NewAppMessage(timestep,senderId,VALUE_SET_SPEED,kToBeApplied);
 	    }
 	    
-
       // Keep in safe place all the results to send back to the iCS
       results = m_messages; 	
 
@@ -497,6 +316,212 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
 
 //////////////////////////////////////////////////
 // Support methods
+
+void
+ApplicationLogic::CreateGeobroadcastReceiveSubscription(int nodeId, int timestep, tcpip::Storage& mySubsStorage) {
+    
+    // command length    
+    mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 2 + 1 + 1 + 2 + 4);
+    // command type
+    mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
+    // subscription type
+    mySubsStorage.writeUnsignedByte(SUB_APP_MSG_RECEIVE);
+    // HEADER_APP_MSG_TYPE
+   // This demo-app only sends one type of message (to stop a vehicles): the code is 0x01 ; if we need to send another type, please change to a different number
+    mySubsStorage.writeUnsignedByte(0x01);
+    
+    // Only destID
+    mySubsStorage.writeUnsignedByte(0x04); 
+    //Target Node id , its for me
+    mySubsStorage.writeInt(nodeId);	
+    //Length of rest of the command (payload length). 
+    mySubsStorage.writeShort(500);
+    //Unicast transmissions
+    mySubsStorage.writeUnsignedByte(EXT_HEADER_TYPE_GEOBROADCAST);
+    //Additional header specifying the sources
+    mySubsStorage.writeUnsignedByte(EXT_HEADER__VALUE_BLOCK_IDs);
+    //Number of Sources (currently only RSU)
+    mySubsStorage.writeShort(1);
+    //-1 for broadcast
+    mySubsStorage.writeInt(-1);
+
+}
+
+void ApplicationLogic::UpdateAppMessageStatus(AppMessage& msg, TrafficApplicationResultMessageState newStatus) {
+	msg.status = newStatus;
+}
+
+void ApplicationLogic::AddReceiverAppMessage(AppMessage& msg, int receiverNodeId) {
+	msg.receivedIds.push_back(receiverNodeId);
+}
+
+
+void ApplicationLogic::CreateGeobroadcastSendSubscription(int timestep, int senderId, int messageId, tcpip::Storage& mySubsStorage){
+
+	//Command length
+	mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 1 + 1 + 4 + 1 + 2 + 4 + 1 + 1 + 1 + 1 + 4+ 4 + 4);
+	//Command type
+	mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
+	mySubsStorage.writeUnsignedByte(SUB_APP_MSG_SEND);
+	mySubsStorage.writeUnsignedByte(0X01); //HEADER_APP_MSG_TYPE 
+	   // This demo-app only sends one type of message (to stop a vehicles): the code is 0x01 ; if we need to send another type, please change to a different number
+	mySubsStorage.writeUnsignedByte(0x0F);  // in bits, it is: 1111 : comm profile, the prefered techno and a senderID and the message lifetime
+	mySubsStorage.writeUnsignedByte(0xFF);  // unsigned char preferredRATs = 0xFF;
+	mySubsStorage.writeUnsignedByte(0xFF);  // unsigned char commProfile = 0xFF;
+	mySubsStorage.writeInt(senderId);
+	mySubsStorage.writeUnsignedByte(2);     // unsigned int msgLifetime = 2;
+	   mySubsStorage.writeShort(1024); // m_app_Msg_length
+	mySubsStorage.writeInt(messageId); //sequence number
+	mySubsStorage.writeUnsignedByte(EXT_HEADER_TYPE_GEOBROADCAST); // CommMode
+	mySubsStorage.writeUnsignedByte(EXT_HEADER__VALUE_BLOCK_AREAs); // CommMode
+	mySubsStorage.writeUnsignedByte(1);
+	/*mySubsStorage.writeInt((*it_).destinationId);*/
+
+	mySubsStorage.writeUnsignedByte(EXT_HEADER__CIRCLE); //Area type 
+	mySubsStorage.writeFloat(m_fogArea.x); //x
+	mySubsStorage.writeFloat(m_fogArea.y); //y
+	mySubsStorage.writeFloat(m_fogArea.radius + m_alertRadius);	//radius   
+
+
+}
+
+void ApplicationLogic::CreateSetSpeedTrafficSimSubscription(int timestep, int destinationId, float speedLimit, tcpip::Storage& mySubsStorage){
+
+	//Command length
+	mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 4 );
+	//Command type
+	mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
+	mySubsStorage.writeUnsignedByte(SUB_APP_CMD_TRAFF_SIM);
+	mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE
+	mySubsStorage.writeUnsignedByte(VALUE_SET_SPEED); //to change the speed
+	mySubsStorage.writeInt(destinationId); //Destination node to set its maximum speed.
+	mySubsStorage.writeFloat(speedLimit); //Set Maximum speed
+
+}
+
+void ApplicationLogic::CreateSlowDownTrafficSimSubscription(int timestep, int destinationId, float speedLimit, int durationOfSlowdown, tcpip::Storage& mySubsStorage){
+    
+	//Command length
+	mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 4 + 4);
+	//Command type
+	mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
+	mySubsStorage.writeUnsignedByte(SUB_APP_CMD_TRAFF_SIM);
+	mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE
+	mySubsStorage.writeUnsignedByte(VALUE_SLOW_DOWN); //to change the speed
+	mySubsStorage.writeInt(destinationId); //Destination node to set its maximum speed.
+	mySubsStorage.writeFloat(speedLimit); //Set Maximum speed
+	mySubsStorage.writeInt(durationOfSlowdown); //duration of slow down                      
+                           
+}  
+
+void ApplicationLogic::Break(int timestep, int destinationId,  tcpip::Storage& mySubsStorage) {
+    stringstream log;
+    log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " break !";
+    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
+    CreateSetSpeedTrafficSimSubscription(timestep,destinationId,m_alertSpeedlimit,mySubsStorage);
+
+    //if in slowdown, stop slowdown
+    m_carLastSlowedTime.erase(destinationId);
+    
+    //keep the time when vehicle change her speed
+    m_carLastSpeedChangeTime.erase(destinationId);
+    m_carLastSpeedChangeTime.insert(std::pair<int,int>(destinationId,timestep)); 
+}
+ 
+
+void ApplicationLogic::StartSlowDown(int timestep, int destinationId, tcpip::Storage& mySubsStorage) {
+
+    stringstream log;
+    log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " slowed !";
+    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
+    CreateSlowDownTrafficSimSubscription(timestep,destinationId, m_alertSpeedlimit, m_durationOfSlowdown * 1000, mySubsStorage);
+    
+    //keep the time when vehicle slowdown
+    m_carLastSlowedTime.erase(destinationId);
+    m_carLastSlowedTime.insert(std::pair<int,int>(destinationId,timestep)); 
+    
+    //keep the time when vehicle change her speed
+    m_carLastSpeedChangeTime.erase(destinationId);
+    m_carLastSpeedChangeTime.insert(std::pair<int,int>(destinationId,timestep));   
+}
+
+void ApplicationLogic::EndSlowDown(int timestep, int destinationId,  tcpip::Storage& mySubsStorage) {
+    stringstream log;
+    log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " end of slowing   !";
+    Log::Write((log.str()).c_str(), kLogLevelInfo);
+      
+    CreateSetSpeedTrafficSimSubscription(timestep,destinationId,m_alertSpeedlimit,mySubsStorage);
+    m_carLastSlowedTime.erase(destinationId);
+
+}
+
+void ApplicationLogic::ResetSpeed(int timestep, int destinationId, tcpip::Storage& mySubsStorage) {
+    stringstream log;
+    log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " speed restored !";
+    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
+    CreateSetSpeedTrafficSimSubscription(timestep,destinationId,-1,mySubsStorage);
+    m_carLastSpeedChangeTime.erase(destinationId);
+}
+
+void ApplicationLogic::LauchAction(int timestep, int action, int destinationId, tcpip::Storage& mySubsStorage) {
+                           
+    switch (action){
+        case VALUE_SLOW_DOWN:
+            StartSlowDown(timestep, destinationId, mySubsStorage);
+        break;
+        case VALUE_SET_SPEED:
+            Break(timestep, destinationId, mySubsStorage);
+        default :
+        {
+            stringstream log;
+            log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " bad action";
+            Log::Write((log.str()).c_str(), kLogLevelError); 
+        }                       
+    }
+}                           
+                           
+
+void ApplicationLogic::NewAppMessage(int timestep, int senderId, int action, TrafficApplicationResultMessageState initStatus){
+
+	//Init message
+	AppMessage message;
+	message.senderId = senderId;
+	message.destinationId = 0; //broadcast !
+	message.createdTimeStep = timestep;
+	message.messageId = ++m_messageCounter;
+	message.status = initStatus;        
+	message.action = action; 
+	
+	if(initStatus == kToBeApplied)
+		message.receivedIds.push_back(senderId);
+	
+	m_messages.push_back(message);
+
+}
+
+void ApplicationLogic::ProcessStatistic(int timestep, int senderId, bool isSlowed){
+
+    //The vehicle is enter in fog now
+    stringstream log; 
+    log << "Vehicle " << senderId << "enter in hazard zone at ";
+
+    if(isSlowed){
+        //Vehicle already slowed (message recevied)
+        log << timestep;
+        Log::Write((log.str()).c_str(), kLogLevelInfo);
+        m_vehiclesInFogOnceTime.insert(std::pair<int,int>(senderId,timestep));
+    }else{ 
+        //Vehicle no slowed
+        log << -1;
+        Log::Write((log.str()).c_str(), kLogLevelInfo);
+        m_vehiclesInFogOnceTime.insert(std::pair<int,int>(senderId,-1)); 
+    }
+
+}  
+
 bool 
 ApplicationLogic::IsTimeToSendAlert(int nodeId, int timestep){
     std::map<int,int>::iterator it = m_lastBroadcast.find(nodeId);

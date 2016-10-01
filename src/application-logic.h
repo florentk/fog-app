@@ -1,7 +1,7 @@
 /****************************************************************************/
 /// @file    application-logic.h
-/// @author  Florent Kaisser, Julen Maneros
-/// @date    23.09.2016
+/// @author  Florent Kaisser
+/// @date    29.09.2016
 ///
 // iTETRIS Fog application related logic
 #ifndef APPLICATIONLOGIC_H
@@ -221,6 +221,47 @@ private:
     
     /// @brief return true if time interval is expired 
     static bool IsTimeToSendAlert(int nodeId, int timestep);
+    
+    /// @brief return a subscription storage for reception of geobroadcast messages by nodeId
+    /// @input nodeId timestep
+    /// @output mySubsStorage
+    static void CreateGeobroadcastReceiveSubscription(int nodeId, int timestep, tcpip::Storage& mySubsStorage);
+
+	/// @brief update the status of a message
+	static void UpdateAppMessageStatus(AppMessage& msg, TrafficApplicationResultMessageState newStatus);
+
+	/// @brief Add a receiver of a message 
+	static void AddReceiverAppMessage(AppMessage& msg, int receiverNodeId);
+	
+	/// @brief create a subscription to slow down vehicle
+    static void CreateSlowDownTrafficSimSubscription(int timestep, int nodeId, float speedLimit, int durationOfSlowdown, tcpip::Storage& mySubsStorage);
+    
+    /// @brief create a subscription to set speed of a vehicle
+    static void CreateSetSpeedTrafficSimSubscription(int timestep, int nodeId, float speedLimit, tcpip::Storage& mySubsStorage);
+    
+    /// @brief create a subscription to geobroadcast effectivelly the message identified by messageId 
+    static void CreateGeobroadcastSendSubscription(int timestep, int senderId, int messageId, tcpip::Storage& mySubsStorage);	
+    
+    /// @brief process for break action
+    static void Break(int timestep, int destinationId,  tcpip::Storage& mySubsStorage);
+    
+    /// @brief process for slowdown action
+    static void StartSlowDown(int timestep, int destinationId, tcpip::Storage& mySubsStorage);
+    
+    /// @brief process when end of slowdown
+    static void EndSlowDown(int timestep, int destinationId,  tcpip::Storage& mySubsStorage);
+    
+    /// @brief process when is alert expired
+    static void ResetSpeed(int timestep, int destinationId, tcpip::Storage& mySubsStorage);
+    
+    /// @brief process action
+    static void LauchAction(int timestep, int action, int destinationId, tcpip::Storage& mySubsStorage);
+    
+    /// @brief create a new message with initial status initStatus
+    static void NewAppMessage(int timestep, int senderId, int action, TrafficApplicationResultMessageState initStatus);
+    
+    /// @brief update statistics
+    static void ProcessStatistic(int timestep, int senderId, bool isSlowed);
 
     /// @brief CAM area definition
     static Area m_camArea;
