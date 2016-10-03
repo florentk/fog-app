@@ -1,10 +1,31 @@
-Fog-app is a application for iTetris to simulate vehicule behaviour and alert sending in a context of hazard zone on a road.
+Fog-app is a application for iTetris to simulate vehicule behaviour and alert sending in a context of hazard zone on a road. iTETRIS [http://www.ict-itetris.eu/] has been used  because it is a unique open source simulation platform characterized by a modular architecture that allows integrating two widely adopted traffic and wireless simulators, whilesupporting the implementation of cooperative ITS applications in a language-agnostic fashion. iTetris is then consisting of three subsystems: ns-3, SUMO and iCS ”iTETRIS Control System”. SUMO and ns3 are two widely referenced open source platforms for vehicular mobility and wireless communications simulations. iCS is the originality of the iTetris platform which allows to communicate ns-3, SUMO and the applications (iAPP) all together besides the synchronization of the simulation. Unlike Ns3, iTETRIS does not modify SUMO.
 
-Describe src tree
+We have chosen iTETRIS because it is also capable to simulate large-scale scenarios, which represents a very appealing feature for the investigation of cooperative CV systems. Typically, the iTETRIS Application defines the time to send a message and how to respond to received messages. This application, communicates with ns-3, SUMO or other applications via iCS uses sockets allowing complete independence of the language used by the various components. The architecture of this platform allows high modularity, making it an advantage in choosing iTetris as ITS simulation platform reference.
 
-Describe choice of iTetris to simulate DSRC network
+We have then developed a new application for iTetris in C ++ Language implementing our alert system.  We have based our application on the community-demo-app2 include in iTetris official distribution. We use this code like a framework to communicate with iCS.  
 
-Describe proposed algo
+We have identified several bugs in the module iCS and ns-3 when processing a geo-broadcast message request, since the version of iTETRIS available on the official website contains a nonfunctional geo-broadcast routing feature. Therefore, we have corrected these bugs and provided the modified iTetris contained in iTETRIS.tgz file (or from GIT : https://github.com/florentk/iTETRIS). 
 
-Describe simulation result processing
+The source of this application is in "src" directory.  "Simulation" directory  contain several tool to create, configures, lauche and process simulations.  
 
+We have rewrite completly the application to use geobroadcast routing and improve the readability and modularity of code. This code is in ApplicationLogic class. We keep the code of client/server (Server class) to communicate with iCS. We have just added additionnal parameters in the main part (fog_app_main.cpp). This default parameters are in simulations/defaults directory. To configure your app, change parameter in itsfogapp-config-file.xml. These parameter are :
+
+- The Hazard zone (fogarea)
+- Alert State: either enabled or disabled
+- Alert speed limit: this information fixes the new speed to adopt by the vehicle having received the alert and arriving in the ”hazard zone”.
+- Alert Interval (alert frequency) is the interval during which an alert is sent by the vehicle in the hazard zone. For example, if the interval is set to 5s, the vehicle entering in the hazard zone will immediately send a message and keep moving, then after 5 seconds, if it is still in the danger zone, it will re-send the same message and so one.
+- Duration of slowing down: is the time taken by the vehicle to reach the new speed ”speed limit” gathered from Alert speed limit mentioned above. For example, when a vehicle moving at 33m/s receives the alert, it will immediately begin to slow down, and reaches the new speed ”speed limit” only after 5 seconds.
+- Radius of alert zone.
+
+Before to use your application, iTetris must be installed on your system. To make this, refer to INSTALL file of iTetris distribution. To compile your application, please execute :
+  aclocal
+  autoconf
+  automake --add-missing
+  ./configure --with-xerces-libraries=/usr/local/lib --with-xerces-includes=/usr/local/include/xercesc --enable-debug
+  make
+  sudo make install
+
+Then, we can lauch a simulation by using iCS :
+  iCS -c itetris-config-file.xml
+
+This is tested with last LTS version of Ubuntu (16.04).
