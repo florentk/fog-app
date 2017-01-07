@@ -222,6 +222,13 @@ private:
     /// @brief return true if time interval is expired 
     static bool IsTimeToSendAlert(int nodeId, int timestep);
     
+    /// @brief return a initialised subscription storage
+    /// @input subsType type of subscription
+    /// @input cmdLength size of other data in subscription   
+    /// @output mySubsStorage    
+    static void InitSubscription(unsigned char subsType, unsigned char cmdLength, tcpip::Storage& mySubsStorage);
+
+    
     /// @brief return a subscription storage for reception of geobroadcast messages by nodeId
     /// @input nodeId timestep
     /// @output mySubsStorage
