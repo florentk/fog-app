@@ -317,18 +317,22 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
 //////////////////////////////////////////////////
 // Support methods
 
-void
-ApplicationLogic::CreateGeobroadcastReceiveSubscription(int nodeId, int timestep, tcpip::Storage& mySubsStorage) {
-    
-    // command length    
-    mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 2 + 1 + 1 + 2 + 4);
+void ApplicationLogic::InitSubscription(unsigned char subsType, unsigned char cmdLength, tcpip::Storage& mySubsStorage) {
+    // command length (size of next data (4 bytes) in this method and the size of other data)
+    mySubsStorage.writeUnsignedByte(cmdLength+4);
     // command type
     mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
     // subscription type
-    mySubsStorage.writeUnsignedByte(SUB_APP_MSG_RECEIVE);
-    // HEADER_APP_MSG_TYPE
-   // This demo-app only sends one type of message (to stop a vehicles): the code is 0x01 ; if we need to send another type, please change to a different number
-    mySubsStorage.writeUnsignedByte(0x01);
+    mySubsStorage.writeUnsignedByte(subsType);
+	//sends one type of message : the code is 0x01 ; if we need to send another type, please change to a different number     
+	mySubsStorage.writeUnsignedByte(0X01); //HEADER_APP_MSG_TYPE 
+   
+}
+
+void
+ApplicationLogic::CreateGeobroadcastReceiveSubscription(int nodeId, int timestep, tcpip::Storage& mySubsStorage) {
+    
+    InitSubscription(SUB_APP_MSG_RECEIVE,1 + 4 + 2 + 1 + 1 + 2 + 4, mySubsStorage);
     
     // Only destID
     mySubsStorage.writeUnsignedByte(0x04); 
@@ -347,6 +351,8 @@ ApplicationLogic::CreateGeobroadcastReceiveSubscription(int nodeId, int timestep
 
 }
 
+//TODO Create AP broadcast receive supscription
+
 void ApplicationLogic::UpdateAppMessageStatus(AppMessage& msg, TrafficApplicationResultMessageState newStatus) {
 	msg.status = newStatus;
 }
@@ -357,14 +363,8 @@ void ApplicationLogic::AddReceiverAppMessage(AppMessage& msg, int receiverNodeId
 
 
 void ApplicationLogic::CreateGeobroadcastSendSubscription(int timestep, int senderId, int messageId, tcpip::Storage& mySubsStorage){
-
-	//Command length
-	mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 1 + 1 + 4 + 1 + 2 + 4 + 1 + 1 + 1 + 1 + 4+ 4 + 4);
-	//Command type
-	mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
-	mySubsStorage.writeUnsignedByte(SUB_APP_MSG_SEND);
-	mySubsStorage.writeUnsignedByte(0X01); //HEADER_APP_MSG_TYPE 
-	   // This demo-app only sends one type of message (to stop a vehicles): the code is 0x01 ; if we need to send another type, please change to a different number
+	
+	InitSubscription(SUB_APP_MSG_SEND,1 + 1 + 1 + 4 + 1 + 2 + 4 + 1 + 1 + 1 + 1 + 4+ 4 + 4, mySubsStorage);	
 	mySubsStorage.writeUnsignedByte(0x0F);  // in bits, it is: 1111 : comm profile, the prefered techno and a senderID and the message lifetime
 	mySubsStorage.writeUnsignedByte(0xFF);  // unsigned char preferredRATs = 0xFF;
 	mySubsStorage.writeUnsignedByte(0xFF);  // unsigned char commProfile = 0xFF;
@@ -385,14 +385,11 @@ void ApplicationLogic::CreateGeobroadcastSendSubscription(int timestep, int send
 
 }
 
+//TODO Create AP broadcast send supscription
+
 void ApplicationLogic::CreateSetSpeedTrafficSimSubscription(int timestep, int destinationId, float speedLimit, tcpip::Storage& mySubsStorage){
 
-	//Command length
-	mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 4 );
-	//Command type
-	mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
-	mySubsStorage.writeUnsignedByte(SUB_APP_CMD_TRAFF_SIM);
-	mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE
+	InitSubscription(SUB_APP_CMD_TRAFF_SIM,1 + 4 + 4 , mySubsStorage);	
 	mySubsStorage.writeUnsignedByte(VALUE_SET_SPEED); //to change the speed
 	mySubsStorage.writeInt(destinationId); //Destination node to set its maximum speed.
 	mySubsStorage.writeFloat(speedLimit); //Set Maximum speed
@@ -400,13 +397,7 @@ void ApplicationLogic::CreateSetSpeedTrafficSimSubscription(int timestep, int de
 }
 
 void ApplicationLogic::CreateSlowDownTrafficSimSubscription(int timestep, int destinationId, float speedLimit, int durationOfSlowdown, tcpip::Storage& mySubsStorage){
-    
-	//Command length
-	mySubsStorage.writeUnsignedByte(1 + 1 + 1 + 1 + 1 + 4 + 4 + 4);
-	//Command type
-	mySubsStorage.writeUnsignedByte(CMD_ASK_FOR_SUBSCRIPTION);
-	mySubsStorage.writeUnsignedByte(SUB_APP_CMD_TRAFF_SIM);
-	mySubsStorage.writeUnsignedByte(0x01); //HEADER_APP_MSG_TYPE
+    InitSubscription(SUB_APP_CMD_TRAFF_SIM, 1 + 4 + 4 + 4, mySubsStorage);	
 	mySubsStorage.writeUnsignedByte(VALUE_SLOW_DOWN); //to change the speed
 	mySubsStorage.writeInt(destinationId); //Destination node to set its maximum speed.
 	mySubsStorage.writeFloat(speedLimit); //Set Maximum speed
