@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Applications>
+  <Application>    
+    <name>FOG APP</name>
+    <executable>itsfogapp -c itsfogapp-config-file.xml</executable>         
+    <ip>localhost</ip>
+    <port>1986</port>
+    <seed>123456</seed>
+    <rate>100</rate>
+    <result-container>OUTPUT_GENERIC</result-container> 
+    <serviceId unicast="serviceIdUnicast" multicast="serviceIdMulticast" broadcast="serviceIdBroadcast" geobroadcast="serviceIdGeobroadcast" topobroadcast="serviceIdTopobroadcast"/>
+    <stations>
+      <id>65536</id>                      
+    </stations>
+  </Application>
+</Applications>

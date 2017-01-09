@@ -136,7 +136,8 @@ ApplicationLogic::RequestReceiveSubscription(int nodeId, int timestep) {
         (*it).second == true;  // will not ask twice...
       }
 
-	  CreateGeobroadcastReceiveSubscription(nodeId, timestep, mySubsStorage);
+	  //CreateGeobroadcastReceiveSubscription(nodeId, timestep, mySubsStorage);
+	  CreateAPReceiveSubscription(nodeId, timestep, mySubsStorage);
   
   }
   return mySubsStorage;
@@ -217,7 +218,8 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
 
         if (((*it_).status == kToBeScheduled) && ((*it_).senderId == nodeId)) { // we need to broadcast a message
             UpdateAppMessageStatus((*it_), kScheduled); 
-            CreateGeobroadcastSendSubscription(timestep, (*it_).senderId , (*it_).messageId, mySubsStorage);
+            //CreateGeobroadcastSendSubscription(timestep, (*it_).senderId , (*it_).messageId, mySubsStorage);
+            CreateAPSendSubscription(timestep, (*it_).senderId , (*it_).messageId, mySubsStorage);
             return  mySubsStorage;  // we break on each successful occurence, as the iCS can only read ONE subscription at a time..we will be called again by the iCS as long as we have something to request
         }
         else if (((*it_).status == kToBeApplied) && ((*it_).senderId == nodeId)) { // we need to process message
@@ -265,11 +267,11 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
     vector<AppMessage> results;
     if (     timestep >= m_appStartTimeStep 
        &&   FogIsActive(timestep) 
-       &&   IsInFog(senderId)
+       /*&&   IsInFog(senderId)*/
     ) { 
          
 	    //test if need to broacast a new alert
-        if(  m_alertActif 
+       /* if(  m_alertActif 
           && !(m_noAlertMessageIfIsSlowed && isSlowed) 
           && IsTimeToSendAlert(senderId,timestep)
         ){
@@ -283,10 +285,21 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
           //keep time when last broadcast
           m_lastBroadcast.erase(senderId);
           m_lastBroadcast.insert(std::pair<int,int>(senderId,timestep));
-        }			
+        }		*/	
+        
+        if(  m_alertActif && IsAP(senderId) ){
+        
+           //Broadcast the alert
+          stringstream log;
+          log<< "AP " << senderId << " broadcast alert at " << timestep;
+          Log::Write((log.str()).c_str(), kLogLevelInfo);
+          
+          NewAppMessage(timestep,senderId,VALUE_SLOW_DOWN,kToBeScheduled);    
+        
+        }
                    
         //Test if is the first time which vehicle enter in alert zone
-        if(m_vehiclesInFogOnceTime.find(senderId) == m_vehiclesInFogOnceTime.end()){
+        if(IsInFog(senderId) && (m_vehiclesInFogOnceTime.find(senderId) == m_vehiclesInFogOnceTime.end())){
             //For statistics
             ProcessStatistic(timestep,senderId,isSlowed);
             //I must reduce my speed ! 		      
@@ -342,16 +355,36 @@ ApplicationLogic::CreateGeobroadcastReceiveSubscription(int nodeId, int timestep
     mySubsStorage.writeShort(500);
     //Unicast transmissions
     mySubsStorage.writeUnsignedByte(EXT_HEADER_TYPE_GEOBROADCAST);
-    //Additional header specifying the sources
+    //Additional header specifying the sources TODO : set to -1
     mySubsStorage.writeUnsignedByte(EXT_HEADER__VALUE_BLOCK_IDs);
-    //Number of Sources (currently only RSU)
+    
+    //TODO remove
+    //Number of Sources (1 for broadcast)
     mySubsStorage.writeShort(1);
     //-1 for broadcast
     mySubsStorage.writeInt(-1);
 
 }
 
-//TODO Create AP broadcast receive supscription
+void
+ApplicationLogic::CreateAPReceiveSubscription(int nodeId, int timestep, tcpip::Storage& mySubsStorage) {
+
+    InitSubscription(SUB_APP_MSG_RECEIVE,1 + 4 + 2 + 1 + 1 + 4, mySubsStorage);
+    
+    // Only destID
+    mySubsStorage.writeUnsignedByte(0x04); 
+    //Target Node id , its for me
+    mySubsStorage.writeInt(nodeId);	
+    //Length of rest of the command (payload length). 
+    mySubsStorage.writeShort(500);
+    //Unicast transmissions
+    mySubsStorage.writeUnsignedByte(EXT_HEADER_TYPE_TOPOBROADCAST);
+    //Additional header specifying the sources
+    mySubsStorage.writeUnsignedByte(EXT_HEADER__VALUE_BLOCK_HOPS_No);
+    //Number of hops (1 for AP)
+    mySubsStorage.writeShort(1);
+
+}
 
 void ApplicationLogic::UpdateAppMessageStatus(AppMessage& msg, TrafficApplicationResultMessageState newStatus) {
 	msg.status = newStatus;
@@ -373,7 +406,7 @@ void ApplicationLogic::CreateGeobroadcastSendSubscription(int timestep, int send
 	   mySubsStorage.writeShort(1024); // m_app_Msg_length
 	mySubsStorage.writeInt(messageId); //sequence number
 	mySubsStorage.writeUnsignedByte(EXT_HEADER_TYPE_GEOBROADCAST); // CommMode
-	mySubsStorage.writeUnsignedByte(EXT_HEADER__VALUE_BLOCK_AREAs); // CommMode
+	mySubsStorage.writeUnsignedByte(EXT_HEADER__VALUE_BLOCK_AREAs);
 	mySubsStorage.writeUnsignedByte(1);
 	/*mySubsStorage.writeInt((*it_).destinationId);*/
 
@@ -385,7 +418,22 @@ void ApplicationLogic::CreateGeobroadcastSendSubscription(int timestep, int send
 
 }
 
-//TODO Create AP broadcast send supscription
+void ApplicationLogic::CreateAPSendSubscription(int timestep, int senderId, int messageId, tcpip::Storage& mySubsStorage){
+	
+	InitSubscription(SUB_APP_MSG_SEND,1 + 1 + 1 + 4 + 1 + 2 + 4 + 1 + 1 + 2, mySubsStorage);	
+	mySubsStorage.writeUnsignedByte(0x0F);  // in bits, it is: 1111 : comm profile, the prefered techno and a senderID and the message lifetime
+	mySubsStorage.writeUnsignedByte(0xFF);  // unsigned char preferredRATs = 0xFF;
+	mySubsStorage.writeUnsignedByte(0xFF);  // unsigned char commProfile = 0xFF;
+	mySubsStorage.writeInt(senderId);
+	mySubsStorage.writeUnsignedByte(2);     // unsigned int msgLifetime = 2;
+	   mySubsStorage.writeShort(1024); // m_app_Msg_length
+	mySubsStorage.writeInt(messageId); //sequence number
+	mySubsStorage.writeUnsignedByte(EXT_HEADER_TYPE_TOPOBROADCAST); // CommMode
+	mySubsStorage.writeUnsignedByte(EXT_HEADER__VALUE_BLOCK_HOPS_No); 
+  //Number of hops (1 for AP)
+  mySubsStorage.writeShort(1);
+}
+
 
 void ApplicationLogic::CreateSetSpeedTrafficSimSubscription(int timestep, int destinationId, float speedLimit, tcpip::Storage& mySubsStorage){
 

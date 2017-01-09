@@ -7,6 +7,9 @@
 #ifndef APPLICATIONLOGIC_H
 #define APPLICATIONLOGIC_H
 
+#define AP_MASK 0x10000
+#define IsAP(i) (i & AP_MASK)
+
 #include "foreign/tcpip/storage.h"
 #include <vector>
 #include <map>
@@ -228,12 +231,16 @@ private:
     /// @output mySubsStorage    
     static void InitSubscription(unsigned char subsType, unsigned char cmdLength, tcpip::Storage& mySubsStorage);
 
-    
     /// @brief return a subscription storage for reception of geobroadcast messages by nodeId
     /// @input nodeId timestep
     /// @output mySubsStorage
     static void CreateGeobroadcastReceiveSubscription(int nodeId, int timestep, tcpip::Storage& mySubsStorage);
-
+    
+    /// @brief return a subscription storage for reception of AP messages by nodeId
+    /// @input nodeId timestep
+    /// @output mySubsStorage
+    static void CreateAPReceiveSubscription(int nodeId, int timestep, tcpip::Storage& mySubsStorage);
+        
 	/// @brief update the status of a message
 	static void UpdateAppMessageStatus(AppMessage& msg, TrafficApplicationResultMessageState newStatus);
 
@@ -249,6 +256,9 @@ private:
     /// @brief create a subscription to geobroadcast effectivelly the message identified by messageId 
     static void CreateGeobroadcastSendSubscription(int timestep, int senderId, int messageId, tcpip::Storage& mySubsStorage);	
     
+    /// @brief create a subscription to AP send effectivelly the message identified by messageId 
+    static void CreateAPSendSubscription(int timestep, int senderId, int messageId, tcpip::Storage& mySubsStorage);	    
+      
     /// @brief process for break action
     static void Break(int timestep, int destinationId,  tcpip::Storage& mySubsStorage);
     
