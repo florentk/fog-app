@@ -369,7 +369,7 @@ ApplicationLogic::CreateGeobroadcastReceiveSubscription(int nodeId, int timestep
 void
 ApplicationLogic::CreateAPReceiveSubscription(int nodeId, int timestep, tcpip::Storage& mySubsStorage) {
 
-    InitSubscription(SUB_APP_MSG_RECEIVE,1 + 4 + 2 + 1 + 1 + 4, mySubsStorage);
+    InitSubscription(SUB_APP_MSG_RECEIVE,1 + 4 + 2 + 1 + 1 + 2, mySubsStorage);
     
     // Only destID
     mySubsStorage.writeUnsignedByte(0x04); 
