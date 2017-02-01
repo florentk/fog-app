@@ -11,6 +11,7 @@
     <serviceId unicast="serviceIdUnicast" multicast="serviceIdMulticast" broadcast="serviceIdBroadcast" geobroadcast="serviceIdGeobroadcast" topobroadcast="serviceIdTopobroadcast"/>
     <stations>
       <id>65536</id>                      
+      <id>65537</id>                      
     </stations>
   </Application>
 </Applications>
