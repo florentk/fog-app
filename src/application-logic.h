@@ -160,9 +160,15 @@ public:
     /// @brief Assigns a time step for the fog is over returning values
     static int SetFogEndTimeStep(int timestep);   
     
-    /// @brief Activ ou inactiv the alert
-    static int SetAlertActif(bool actif); 
+    /// @brief Activ ou inactiv the  vehiclealert
+    static int SetVehicleAlert(bool actif); 
     
+    /// @brief Activ ou inactiv the RSU alert
+    static int SetRSUAlert(bool actif); 
+    
+    /// @brief Activ ou inactiv the stopped vehicle alert
+    static int SetStoppedVehicleAlert(bool actif);         
+
     /// @brief Intializes the Minimum interval between broadcast alert in second
     static int SetAlertInterval(int interval); 
         
@@ -218,6 +224,9 @@ private:
     
     /// @brief return true if the node idNode is in a fog
     static bool IsInFog(int idNode);
+    
+    /// @brief return true if the vehicle is stopped
+    static bool IsStoppedInFog(int idNode);  
     
     /// @brief return true if the node idNode has received the message msg
     static bool msgIsReceivedByNode(AppMessage& msg, int idNode);
@@ -307,8 +316,14 @@ private:
     /// @brief Speed limit on alert
     static float m_alertSpeedlimit;    
     
-    /// @brief Sending alert actif or not
-    static bool m_alertActif;       
+    /// @brief Sending fog alert actif or not
+    static bool m_alertFog;   
+    
+    /// @brief Sending RSU alert actif or not
+    static bool m_alertRSU;   
+    
+    /// @brief Sending stopped vehicle alert actif or not
+    static bool m_alertStoppedVehicle;           
     
     /// @brief Minimum interval between broadcast alert
     static int m_alertInterval; 

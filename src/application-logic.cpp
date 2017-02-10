@@ -48,10 +48,12 @@ int ApplicationLogic::m_fogEndTimeStep;
 float ApplicationLogic::m_alertRadius;
 int ApplicationLogic::m_alertTimeOut; 
 float ApplicationLogic::m_alertSpeedlimit;   
-bool ApplicationLogic::m_alertActif=false;
 int ApplicationLogic::m_alertInterval=1; 
 int ApplicationLogic::m_durationOfSlowdown=5;   
 bool ApplicationLogic::m_noAlertMessageIfIsSlowed=false;  
+bool ApplicationLogic::m_alertFog=false;
+bool ApplicationLogic::m_alertRSU=false; 
+bool ApplicationLogic::m_alertStoppedVehicle=false;   
 /////////////////////
 
 /////////////////////
@@ -136,8 +138,11 @@ ApplicationLogic::RequestReceiveSubscription(int nodeId, int timestep) {
         (*it).second == true;  // will not ask twice...
       }
 
-	  //CreateGeobroadcastReceiveSubscription(nodeId, timestep, mySubsStorage);
-	  CreateAPReceiveSubscription(nodeId, timestep, mySubsStorage);
+    if (m_alertFog || m_alertStoppedVehicle)
+	    CreateGeobroadcastReceiveSubscription(nodeId, timestep, mySubsStorage);
+	    
+	  if (m_alertRSU)
+	    CreateAPReceiveSubscription(nodeId, timestep, mySubsStorage);
   
   }
   return mySubsStorage;
@@ -218,8 +223,12 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
 
         if (((*it_).status == kToBeScheduled) && ((*it_).senderId == nodeId)) { // we need to broadcast a message
             UpdateAppMessageStatus((*it_), kScheduled); 
-            //CreateGeobroadcastSendSubscription(timestep, (*it_).senderId , (*it_).messageId, mySubsStorage);
-            CreateAPSendSubscription(timestep, (*it_).senderId , (*it_).messageId, mySubsStorage);
+            
+            if(IsAP((*it_).senderId))
+              CreateAPSendSubscription(timestep, (*it_).senderId , (*it_).messageId, mySubsStorage);
+            else
+              CreateGeobroadcastSendSubscription(timestep, (*it_).senderId , (*it_).messageId, mySubsStorage);
+              
             return  mySubsStorage;  // we break on each successful occurence, as the iCS can only read ONE subscription at a time..we will be called again by the iCS as long as we have something to request
         }
         else if (((*it_).status == kToBeApplied) && ((*it_).senderId == nodeId)) { // we need to process message
@@ -265,13 +274,13 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
 {
     bool isSlowed = NodeIsSlowed(senderId,timestep);
     vector<AppMessage> results;
-    if (     timestep >= m_appStartTimeStep 
-       &&   FogIsActive(timestep) 
-       /*&&   IsInFog(senderId)*/
-    ) { 
+    if (     timestep >= m_appStartTimeStep  ) { 
          
-	    //test if need to broacast a new alert
-       /* if(  m_alertActif 
+	    //test if the vehicle need to broacast a new alert
+        if(  m_alertFog
+          && !IsAP(senderId) 
+          && FogIsActive(timestep) 
+          && IsInFog(senderId) 
           && !(m_noAlertMessageIfIsSlowed && isSlowed) 
           && IsTimeToSendAlert(senderId,timestep)
         ){
@@ -285,16 +294,32 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
           //keep time when last broadcast
           m_lastBroadcast.erase(senderId);
           m_lastBroadcast.insert(std::pair<int,int>(senderId,timestep));
-        }		*/	
+        }		
         
-        if(  m_alertActif && IsAP(senderId) ){
+        if(  m_alertRSU 
+          && IsAP(senderId) 
+          && FogIsActive(timestep) 
+        ){
         
-           //Broadcast the alert
+          //Broadcast the alert
           stringstream log;
-          log<< "AP " << senderId << " broadcast alert at " << timestep;
+          log<< "RSU " << senderId << " broadcast alert at " << timestep;
           Log::Write((log.str()).c_str(), kLogLevelInfo);
           
           NewAppMessage(timestep,senderId,VALUE_SLOW_DOWN,kToBeScheduled);    
+        }
+        
+        if( m_alertStoppedVehicle
+          && !IsAP(senderId)
+          && IsStoppedInFog(senderId)
+        ){
+        
+           //Broadcast the alert
+          stringstream log;
+          log<< "Stopped Vehicle " << senderId << " broadcast alert at " << timestep;
+          Log::Write((log.str()).c_str(), kLogLevelInfo);
+          
+          NewAppMessage(timestep,senderId,VALUE_SLOW_DOWN,kToBeScheduled);           
         
         }
                    
@@ -656,6 +681,17 @@ ApplicationLogic::IsInFog(int idNode){
     return false;
 }
 
+bool
+ApplicationLogic::IsStoppedInFog(int idNode){
+
+    for (vector<Vehicle>::const_iterator it = m_vehiclesInFog.begin() ; it != m_vehiclesInFog.end() ; it++) {
+        if ((*it).id == idNode && (*it).speed < 0.1)
+            return true;
+    }
+    
+    return false;
+}
+
 float 
 ApplicationLogic::PartOfVehicleInFogSlowed(int idNode){
     int slowed=0;
@@ -841,21 +877,50 @@ int ApplicationLogic::SetAlertSpeedlimit(float alertspeedlimit)
     return EXIT_SUCCESS;     
 }       
 
-int ApplicationLogic::SetAlertActif(bool actif)
+int ApplicationLogic::SetVehicleAlert(bool actif)
 {
     stringstream log;
     if(actif)
-      log << "Alert is activ";
+      log << "Vehicle Fog Alert is activ";
     else
-      log << "Alert is inactiv";    
+      log << "Vehicle Fog Alert is inactiv";    
       
     Log::Write((log.str()).c_str(), kLogLevelInfo); 
 
-    m_alertActif = actif;
+    m_alertFog = actif;
    
     return EXIT_SUCCESS;      
 }
 
+int ApplicationLogic::SetRSUAlert(bool actif)
+{
+    stringstream log;
+    if(actif)
+      log << "RSU Alert is activ";
+    else
+      log << "RSU Alert is inactiv";    
+      
+    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
+    m_alertRSU = actif;
+   
+    return EXIT_SUCCESS;      
+}
+
+int ApplicationLogic::SetStoppedVehicleAlert(bool actif)
+{
+    stringstream log;
+    if(actif)
+      log << "Stopped Vehicle Alert is activ";
+    else
+      log << "Stopped Vehicle Alert is inactiv";    
+      
+    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
+    m_alertStoppedVehicle = actif;
+   
+    return EXIT_SUCCESS;      
+}
 
 int ApplicationLogic::SetAlertInterval(int interval){
     stringstream log;

@@ -1,0 +1,28 @@
+
+
+
+<routes>
+    <vType id="stopped_truck" accel="1.0" decel="35" sigma="0.5" color="0,1,1" length="6.5" maxSpeed="25"  guiShape="truck"/>
+
+    <vTypeDistribution id="vehicles">
+        <vType id="car1" accel="2.0" decel="4.5" sigma="0.5" color="0,1,0" length="6.5" maxSpeed="30"  guiShape="passenger" probability="0.2" />
+        <vType id="car2" accel="1.8" decel="4.5" sigma="0.5" color="0,0,1" length="6.5" maxSpeed="40"  guiShape="passenger" probability="0.7" />   
+        <vType id="truck" accel="1.0" decel="3.5" sigma="0.5" color="0,1,1" length="6.5" maxSpeed="25"  guiShape="truck" probability="0.1" />                
+    </vTypeDistribution>  
+
+   <flow id="0" type="vehicles" depart="0"  begin="0" end="100" vehsPerHour="2000">
+         <route  color="1,1,0" edges="gneE0"/>
+   </flow>
+   <flow id="1" type="vehicles" depart="0"  begin="0" end="100" vehsPerHour="2000">
+         <route  color="1,1,0" edges="-gneE0"/>  
+    </flow>
+    
+    
+   <vehicle id="100" type="stopped_truck" depart="20" arrivalPos="2001"  color="1,0,0" >
+      <route edges="gneE0" />
+      <stop lane="gneE0_0" endPos="2000" until="300"/>
+   </vehicle>   
+   
+   
+    
+</routes>

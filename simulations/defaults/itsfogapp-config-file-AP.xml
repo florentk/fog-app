@@ -30,8 +30,8 @@
     
     
     <alert>
-      <vehiclefogalert value="true"/>
-      <rsualert value="false"/>
+      <vehiclefogalert value="false"/>
+      <rsualert value="true"/>
       <vehiclestoppedalert value="false"/>      
       <radiusalert value="2000"/>
       <timeoutalert value="200"/>

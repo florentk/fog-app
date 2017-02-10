@@ -106,8 +106,14 @@ fillOptions()
     oc.doRegister("alertspeedlimit", new Option_Float());
     oc.addDescription("alertspeedlimit", "Alert", "Defines the speed limit on alert");    
    
-    oc.doRegister("alertactif", new Option_Bool());
-    oc.addDescription("alertactif", "Alert", "Defines if the alert is activ");          
+    oc.doRegister("vehiclefogalert", new Option_Bool());
+    oc.addDescription("vehiclefogalert", "Alert", "Defines if vehicles send an alert on enter in fog");    
+    
+    oc.doRegister("rsualert", new Option_Bool());
+    oc.addDescription("rsualert", "Alert", "Defines if RSU send alert");   
+   
+    oc.doRegister("vehiclestoppedalert", new Option_Bool());
+    oc.addDescription("vehiclestoppedalert", "Alert", "Defines if a stopped vehicle send an alert");       
     
     oc.doRegister("alertinterval", new Option_Integer());
     oc.addDescription("alertinterval", "Alert", "Defines the Minimum interval between broadcast alert in second");   
@@ -223,11 +229,22 @@ checkOptions()
         MsgHandler::getErrorInstance()->inform("Missing the speed limit on alert.");
         ret = false;
     }
-    if (!oc.isSet("alertactif")) {
-        MsgHandler::getErrorInstance()->inform("Missing the activity alert");
+
+    if (!oc.isSet("vehiclefogalert")) {
+        MsgHandler::getErrorInstance()->inform("Missing vehicle fog alert");
         ret = false;
     }   
-  
+    
+    if (!oc.isSet("rsualert")) {
+        MsgHandler::getErrorInstance()->inform("Missing RSU alert");
+        ret = false;
+    }   
+
+    if (!oc.isSet("vehiclestoppedalert")) {
+        MsgHandler::getErrorInstance()->inform("Missing vehicle stopping alert");
+        ret = false;
+    }   
+     
     if (!oc.isSet("alertinterval")) {
         MsgHandler::getErrorInstance()->inform("Missing the Minimum interval between broadcast alert in second");
         ret = false;
@@ -300,7 +317,9 @@ int main(int argc, char **argv)
         if (ApplicationLogic::SetAlertRadius(oc.getFloat("radiusalert")) == EXIT_FAILURE) throw ProcessError();
         if (ApplicationLogic::SetAlertTimeOut(oc.getInt("timeoutalert")) == EXIT_FAILURE) throw ProcessError();
         if (ApplicationLogic::SetAlertSpeedlimit(oc.getFloat("alertspeedlimit")) == EXIT_FAILURE) throw ProcessError();
-        if (ApplicationLogic::SetAlertActif(oc.getBool("alertactif")) == EXIT_FAILURE) throw ProcessError();        
+        if (ApplicationLogic::SetVehicleAlert(oc.getBool("vehiclefogalert")) == EXIT_FAILURE) throw ProcessError();   
+        if (ApplicationLogic::SetRSUAlert(oc.getBool("rsualert")) == EXIT_FAILURE) throw ProcessError();   
+        if (ApplicationLogic::SetStoppedVehicleAlert(oc.getBool("vehiclestoppedalert")) == EXIT_FAILURE) throw ProcessError();                   
         if (ApplicationLogic::SetAlertInterval(oc.getInt("alertinterval")) == EXIT_FAILURE) throw ProcessError();
         if (ApplicationLogic::SetDurationOfSlowdown(oc.getInt("durationofslowdown")) == EXIT_FAILURE) throw ProcessError();       
         if (ApplicationLogic::SetNoAlertMessageIfIsSlowed(oc.getBool("noalertmessageifisslowed")) == EXIT_FAILURE) throw ProcessError();     
