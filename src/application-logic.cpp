@@ -53,7 +53,8 @@ int ApplicationLogic::m_durationOfSlowdown=5;
 bool ApplicationLogic::m_noAlertMessageIfIsSlowed=false;  
 bool ApplicationLogic::m_alertFog=false;
 bool ApplicationLogic::m_alertRSU=false; 
-bool ApplicationLogic::m_alertStoppedVehicle=false;   
+bool ApplicationLogic::m_alertStoppedVehicle=false; 
+bool ApplicationLogic::m_vehicleBreakInFog=false;     
 /////////////////////
 
 /////////////////////
@@ -236,14 +237,12 @@ ApplicationLogic::CheckForRequiredSubscriptions (int nodeId, int timestep){
             if ((*it_).receivedIds.size() == 1)           
                 UpdateAppMessageStatus((*it_), kApplied); 
         
-            //for each destination of this message
-            for (vector<int>::iterator itDestIds = (*it_).receivedIds.begin(); itDestIds != (*it_).receivedIds.end() ; ++itDestIds) {
-                int destinationId = (*itDestIds);
-                (*it_).receivedIds.erase(itDestIds);
-
-                //lauch action
-                LauchAction(timestep,(*it_).action,destinationId,mySubsStorage);
-                return  mySubsStorage;                    
+            //for each destination of this message            
+            while( ! (*it_).receivedIds.empty()){
+              int destinationId = (*it_).receivedIds.back();
+              (*it_).receivedIds.pop_back();
+              if(LauchAction(timestep,(*it_).action,nodeId,destinationId,mySubsStorage))
+                  return mySubsStorage; 
             }
         }
     }
@@ -324,11 +323,13 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
         }
                    
         //Test if is the first time which vehicle enter in alert zone
-        if(IsInFog(senderId) && (m_vehiclesInFogOnceTime.find(senderId) == m_vehiclesInFogOnceTime.end())){
-            //For statistics
-            ProcessStatistic(timestep,senderId,isSlowed);
-            //I must reduce my speed ! 		      
-		    NewAppMessage(timestep,senderId,VALUE_SET_SPEED,kToBeApplied);
+        if( m_vehicleBreakInFog 
+        	&& IsInFog(senderId) 
+        	&& (m_vehiclesInFogOnceTime.find(senderId) == m_vehiclesInFogOnceTime.end())){
+          //For statistics
+          ProcessStatistic(timestep,senderId,isSlowed);
+          //I must reduce my speed ! 		      
+	    		NewAppMessage(timestep,senderId,VALUE_SET_SPEED,kToBeApplied);
 	    }
 	    
       // Keep in safe place all the results to send back to the iCS
@@ -480,6 +481,10 @@ void ApplicationLogic::CreateSlowDownTrafficSimSubscription(int timestep, int de
 
 void ApplicationLogic::Break(int timestep, int destinationId,  tcpip::Storage& mySubsStorage) {
     stringstream log;
+    
+    if(IsStoppedInFog(destinationId))
+      return;
+    
     log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " break !";
     Log::Write((log.str()).c_str(), kLogLevelInfo); 
 
@@ -497,6 +502,10 @@ void ApplicationLogic::Break(int timestep, int destinationId,  tcpip::Storage& m
 void ApplicationLogic::StartSlowDown(int timestep, int destinationId, tcpip::Storage& mySubsStorage) {
 
     stringstream log;
+    
+    if(IsStoppedInFog(destinationId))
+      return;    
+    
     log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " slowed !";
     Log::Write((log.str()).c_str(), kLogLevelInfo); 
 
@@ -530,14 +539,18 @@ void ApplicationLogic::ResetSpeed(int timestep, int destinationId, tcpip::Storag
     m_carLastSpeedChangeTime.erase(destinationId);
 }
 
-void ApplicationLogic::LauchAction(int timestep, int action, int destinationId, tcpip::Storage& mySubsStorage) {
+bool ApplicationLogic::LauchAction(int timestep, int action, int senderId , int destinationId, tcpip::Storage& mySubsStorage) {
+                           
+    if(IsAP(senderId) || !IsBehind(senderId,destinationId))   
+      return false;               
                            
     switch (action){
         case VALUE_SLOW_DOWN:
             StartSlowDown(timestep, destinationId, mySubsStorage);
-        break;
+            return true;
         case VALUE_SET_SPEED:
             Break(timestep, destinationId, mySubsStorage);
+            return true;           
         default :
         {
             stringstream log;
@@ -545,6 +558,8 @@ void ApplicationLogic::LauchAction(int timestep, int action, int destinationId, 
             Log::Write((log.str()).c_str(), kLogLevelError); 
         }                       
     }
+    
+    return false;
 }                           
                            
 
@@ -670,26 +685,69 @@ ApplicationLogic::FogIsActive(int timestep){
     return (m_fogStartTimeStep <= timestep) && (timestep < m_fogEndTimeStep);
 }
 
-bool
-ApplicationLogic::IsInFog(int idNode){
+
+
+Vehicle
+ApplicationLogic::GetVehicle(int idNode){
+    Vehicle v;
+    v.id=-1;
 
     for (vector<Vehicle>::const_iterator it = m_vehiclesInFog.begin() ; it != m_vehiclesInFog.end() ; it++) {
         if ((*it).id == idNode)
-            return true;
+            return *it;
     }
+
+    return v;
+}
+
+
+bool
+
+ApplicationLogic::IsInFog(int idNode){
+    return GetVehicle(idNode).id!=-1;
+}
+
+
+
+
+bool
+ApplicationLogic::IsSameDirection(int idNode1,int idNode2){
+    Vehicle v1 = GetVehicle(idNode1);
+    Vehicle v2 = GetVehicle(idNode2);    
+
+    if(v1.id==-1 || v2.id==-1)
+      return false;
+
+    float diff = (v1.direction - v2.direction);
+    return diff < 10 && diff > -10;
+}
+
+bool
+ApplicationLogic::IsBehind(int idNode1,int idNode2){
+    Vehicle v1 = GetVehicle(idNode1);
+    Vehicle v2 = GetVehicle(idNode2);    
+
+    if(v1.id==-1 || v2.id==-1)
+      return false;
+
+    float diff = (v1.direction - v2.direction);
     
-    return false;
+    if ( diff > 10 || diff < -10)
+      return false;
+    
+    if(v1.direction == 90 && v1.x < v2.x)
+      return false;
+      
+    if(v1.direction == 270 && v1.x > v2.x)
+      return false;      
+    
+    return true;
 }
 
 bool
 ApplicationLogic::IsStoppedInFog(int idNode){
-
-    for (vector<Vehicle>::const_iterator it = m_vehiclesInFog.begin() ; it != m_vehiclesInFog.end() ; it++) {
-        if ((*it).id == idNode && (*it).speed < 0.1)
-            return true;
-    }
-    
-    return false;
+    Vehicle v = GetVehicle(idNode);
+    return (v.id!=-1 && v.speed < 0.1);
 }
 
 float 
@@ -965,6 +1023,22 @@ int ApplicationLogic::SetNoAlertMessageIfIsSlowed(bool enable){
    
     return EXIT_SUCCESS;   
 }  
+
+int ApplicationLogic::SetBreakInFog(bool enable){
+    stringstream log;
+    if(enable)
+      log << "Break inf fog is activ";
+    else
+      log << "Break inf fog is inactiv";    
+      
+    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
+    m_vehicleBreakInFog = enable;
+   
+    return EXIT_SUCCESS;   
+}  
+     
+
 //END Setters
 //////////////////////////////////////////////////
 

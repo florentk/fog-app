@@ -84,6 +84,8 @@ struct Vehicle {
     float y;
     /// @brief current vehicle speed
     float speed;
+    /// @brief the current direction of the vehicle.
+    float direction;    
 };
 
 // ===========================================================================
@@ -138,6 +140,9 @@ public:
     
     /// @brief Intializes where the alert is propaging
     static int SetAlertRadius(float radius);
+    
+    /// @brief Intializes where the vehicle break on arrival in fog   
+    static int SetBreakInFog(bool actif);
     
     /// @brief Intializes the time out of a alert
     static int SetAlertTimeOut(int alerttimeout); 
@@ -227,6 +232,15 @@ private:
     
     /// @brief return true if the vehicle is stopped
     static bool IsStoppedInFog(int idNode);  
+
+    /// @brief return the vehicle of node
+    static Vehicle GetVehicle(int idNode);
+    
+    /// @brief return true if the two nodes go in the same direction
+    static bool IsSameDirection(int idNode1, int idNode2);
+    
+    /// @brief return true if node 2 is behind idNode1
+    static bool IsBehind(int idNode1,int idNode2);
     
     /// @brief return true if the node idNode has received the message msg
     static bool msgIsReceivedByNode(AppMessage& msg, int idNode);
@@ -281,7 +295,7 @@ private:
     static void ResetSpeed(int timestep, int destinationId, tcpip::Storage& mySubsStorage);
     
     /// @brief process action
-    static void LauchAction(int timestep, int action, int destinationId, tcpip::Storage& mySubsStorage);
+    static bool LauchAction(int timestep, int action, int senderId , int destinationId, tcpip::Storage& mySubsStorage);
     
     /// @brief create a new message with initial status initStatus
     static void NewAppMessage(int timestep, int senderId, int action, TrafficApplicationResultMessageState initStatus);
@@ -332,7 +346,10 @@ private:
     static int m_durationOfSlowdown;   
     
     /// @brief if the vehicule is slowed, no resend alert
-    static bool m_noAlertMessageIfIsSlowed;     
+    static bool m_noAlertMessageIfIsSlowed;  
+    
+    /// @brief if true, the vehicle break on arrival in fog   
+    static bool m_vehicleBreakInFog;   
             
 };
 

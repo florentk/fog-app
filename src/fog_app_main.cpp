@@ -95,8 +95,11 @@ fillOptions()
     oc.addDescription("startfog", "FogArea", "Defines the begin time of fog");  
     
     oc.doRegister("endfog", new Option_Integer());
-    oc.addDescription("endfog", "FogArea", "Defines the end time of fog");           
+    oc.addDescription("endfog", "FogArea", "Defines the end time of fog");    
     
+    oc.doRegister("vehiclebreakinfog", new Option_Bool());
+    oc.addDescription("vehiclebreakinfog", "FogArea", "Defines if a vehicle break on arrival in fog");           
+               
     oc.doRegister("radiusalert", new Option_Float());
     oc.addDescription("radiusalert", "Alert", "Defines radius of the alert");  
      
@@ -113,8 +116,8 @@ fillOptions()
     oc.addDescription("rsualert", "Alert", "Defines if RSU send alert");   
    
     oc.doRegister("vehiclestoppedalert", new Option_Bool());
-    oc.addDescription("vehiclestoppedalert", "Alert", "Defines if a stopped vehicle send an alert");       
-    
+    oc.addDescription("vehiclestoppedalert", "Alert", "Defines if a stopped vehicle send an alert");   
+        
     oc.doRegister("alertinterval", new Option_Integer());
     oc.addDescription("alertinterval", "Alert", "Defines the Minimum interval between broadcast alert in second");   
     
@@ -215,6 +218,11 @@ checkOptions()
         ret = false;
     }
     
+    if (!oc.isSet("vehiclebreakinfog")) {
+        MsgHandler::getErrorInstance()->inform("Missing breaking in fog option.");
+        ret = false;
+    }    
+    
     if (!oc.isSet("radiusalert")) {
         MsgHandler::getErrorInstance()->inform("Missing radius of the alert.");
         ret = false;
@@ -314,6 +322,7 @@ int main(int argc, char **argv)
         if (ApplicationLogic::SetFogArea(oc.getFloat("xfog"), oc.getFloat("yfog"), oc.getFloat("radiusfog")) == EXIT_FAILURE) throw ProcessError();
         if (ApplicationLogic::SetFogStartTimeStep(oc.getInt("startfog")) == EXIT_FAILURE) throw ProcessError();        
         if (ApplicationLogic::SetFogEndTimeStep(oc.getInt("endfog")) == EXIT_FAILURE) throw ProcessError();
+        if (ApplicationLogic::SetBreakInFog(oc.getBool("vehiclebreakinfog")) == EXIT_FAILURE) throw ProcessError();        
         if (ApplicationLogic::SetAlertRadius(oc.getFloat("radiusalert")) == EXIT_FAILURE) throw ProcessError();
         if (ApplicationLogic::SetAlertTimeOut(oc.getInt("timeoutalert")) == EXIT_FAILURE) throw ProcessError();
         if (ApplicationLogic::SetAlertSpeedlimit(oc.getFloat("alertspeedlimit")) == EXIT_FAILURE) throw ProcessError();

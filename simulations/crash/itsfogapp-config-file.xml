@@ -11,21 +11,22 @@
     <camareasubscription>
         <xcam value="5000"/>
         <ycam value="50"/>
-        <radiuscam value="5000"/>
+        <radiuscam value="4500"/>
     </camareasubscription>
 
     <returningcarareasubscription>
         <xcar value="5000"/>
         <ycar value="50"/>
-        <radiuscar value="500"/>
+        <radiuscar value="4500"/>
     </returningcarareasubscription>
     
     <fogarea>
         <xfog value="5000"/>
         <yfog value="50"/>
-        <radiusfog value="500"/>
+        <radiusfog value="4500"/>
         <startfog value="100"/>
         <endfog value="500"/>
+	<vehiclebreakinfog value="false"/>
     </fogarea>   
     
     
