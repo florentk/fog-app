@@ -346,6 +346,8 @@ Server::ReceiveSubscriptionCarsInZone()
         v.id = myInputStorage.readInt();
         v.x = myInputStorage.readFloat();
         v.y = myInputStorage.readFloat();
+        v.speed = myInputStorage.readFloat();
+        v.direction = myInputStorage.readFloat();        
         vehicles.push_back(v);
     }
 
