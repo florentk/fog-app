@@ -100,7 +100,7 @@ class ApplicationLogic
 public:
 
     /// @brief The collection of vehicles in the CAM area
-    static std::vector<Vehicle> m_vehiclesInFog;
+    static std::map<int,Vehicle> m_vehiclesInFog;
 
     /// @brief The collection of messages the results travel in
     static std::vector<AppMessage> m_messages;

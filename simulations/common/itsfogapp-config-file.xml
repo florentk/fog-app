@@ -26,6 +26,7 @@
         <radiusfog value="500"/>
         <startfog value="100"/>
         <endfog value="500"/>
+	<vehiclebreakinfog value="true"/>
     </fogarea>   
     
     

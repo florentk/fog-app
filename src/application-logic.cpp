@@ -72,7 +72,7 @@ vector<AppMessage> ApplicationLogic::m_messages;
 
 //----------------------
 // state of vehicles/cars
-vector<Vehicle> ApplicationLogic::m_vehiclesInFog;
+map<int,Vehicle> ApplicationLogic::m_vehiclesInFog;
 // mapped on car id
 map<int, bool> ApplicationLogic::m_carRxSubs;
 map<int, int> ApplicationLogic::m_carLastSpeedChangeTime;   
@@ -109,13 +109,25 @@ ApplicationLogic::DropSubscription(int subscriptionType)
    } 
 }
 
+bool SortByPos (Vehicle i,Vehicle j) { 
+
+  //TODO no work with not straight road
+  return (i.x<j.x); 
+
+}
+
 bool
 ApplicationLogic::ProcessSubscriptionCarsInZone(vector<Vehicle>& vehicles)
 {
+    //sort the vehicle by its positions
+    std::sort (vehicles.begin(), vehicles.end(), SortByPos);  
+
     // Erase old data
     m_vehiclesInFog.clear();
-    // Assign new data
-    m_vehiclesInFog = vehicles;
+    
+    for (vector<Vehicle>::const_iterator it = vehicles.begin() ; it != vehicles.end() ; it++) {    
+      m_vehiclesInFog.insert(std::pair<int,Vehicle>((*it).id,*it)); 
+    }
 
     return true;
 }
@@ -690,12 +702,12 @@ ApplicationLogic::FogIsActive(int timestep){
 Vehicle
 ApplicationLogic::GetVehicle(int idNode){
     Vehicle v;
+    
     v.id=-1;
+    std::map<int,Vehicle>::iterator it = m_vehiclesInFog.find(idNode);
 
-    for (vector<Vehicle>::const_iterator it = m_vehiclesInFog.begin() ; it != m_vehiclesInFog.end() ; it++) {
-        if ((*it).id == idNode)
-            return *it;
-    }
+    if(it != m_vehiclesInFog.end())
+      v = it->second;
 
     return v;
 }
@@ -734,6 +746,8 @@ ApplicationLogic::IsBehind(int idNode1,int idNode2){
     
     if ( diff > 10 || diff < -10)
       return false;
+      
+    //TODO no work with not straight road
     
     if(v1.direction == 90 && v1.x < v2.x)
       return false;
