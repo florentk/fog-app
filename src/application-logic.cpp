@@ -116,6 +116,29 @@ bool SortByPos (Vehicle i,Vehicle j) {
 
 }
 
+int ApplicationLogic::FirstVehicleOnSameLane(vector<Vehicle>& vehicles,vector<Vehicle>::const_iterator v) {
+
+	if(v->direction == 90){
+		
+		for (vector<Vehicle>::const_iterator it = v+1; it != vehicles.end() ; it++) {  
+			if(it->y == v->y)
+				return it->id;
+		}
+	
+	}
+	
+	if(v->direction == 270 && v != vehicles.begin()){
+		
+		for (vector<Vehicle>::const_iterator it = v-1; it != vehicles.begin() ; it--) {  
+			if(it->y == v->y)
+				return it->id;
+		}
+	
+	}	
+	
+	return -1;
+}
+
 bool
 ApplicationLogic::ProcessSubscriptionCarsInZone(vector<Vehicle>& vehicles)
 {
@@ -125,8 +148,14 @@ ApplicationLogic::ProcessSubscriptionCarsInZone(vector<Vehicle>& vehicles)
     // Erase old data
     m_vehiclesInFog.clear();
     
-    for (vector<Vehicle>::const_iterator it = vehicles.begin() ; it != vehicles.end() ; it++) {    
-      m_vehiclesInFog.insert(std::pair<int,Vehicle>((*it).id,*it)); 
+    for (vector<Vehicle>::const_iterator it = vehicles.begin() ; it != vehicles.end() ; it++) {   
+      Vehicle v =  *it;
+         
+         
+      /* no work with not straight road */
+      v.behindId = ApplicationLogic::FirstVehicleOnSameLane(vehicles,it);
+      
+      m_vehiclesInFog.insert(std::pair<int,Vehicle>(v.id,v)); 
     }
 
     return true;
@@ -712,11 +741,24 @@ ApplicationLogic::GetVehicle(int idNode){
     return v;
 }
 
-
 bool
-
 ApplicationLogic::IsInFog(int idNode){
     return GetVehicle(idNode).id!=-1;
+}
+
+float 
+ApplicationLogic::ComputeDistance(int idNode1,int idNode2){
+    Vehicle v1 = GetVehicle(idNode1);
+    Vehicle v2 = GetVehicle(idNode2); 
+    	
+	//TODO no work with not straight road
+	return v2.x - v1.x;
+}
+
+float ApplicationLogic::DistanceWithBehindVehicle(int idNode){
+
+	
+
 }
 
 

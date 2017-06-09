@@ -85,7 +85,9 @@ struct Vehicle {
     /// @brief current vehicle speed
     float speed;
     /// @brief the current direction of the vehicle.
-    float direction;    
+    float direction;   
+    /// @brief Reference to behind vehicle's
+    int behindId;
 };
 
 // ===========================================================================
@@ -226,6 +228,15 @@ private:
 
     /// @brief return true if the fog is active
     static bool FogIsActive(int timestep);
+
+    /// @brief compute the dist between idNode1 and idNode2
+    static float ComputeDistance(int idNode1,int idNode2);
+    
+    /// @brief return the id of followed vehicle on same lane
+    static int FirstVehicleOnSameLane(std::vector<Vehicle>& vehicles,std::vector<Vehicle>::const_iterator v);
+    
+    /// @brief return the distance with the behind vehicle's
+    static float DistanceWithBehindVehicle(int idNode);    
     
     /// @brief return true if the node idNode is in a fog
     static bool IsInFog(int idNode);
