@@ -8,17 +8,15 @@ import math
 class VehicleHandler( xml.sax.ContentHandler ):
    def __init__(self):
       self.LENGHT = 6.0
-      self.THRESHOLD = 3.0
+      self.DIST_THRESHOLD = 100.0
       self.lane_id = ""
       self.time = ""
       self.last_pos = 0.0
       self.last_speed = 0.0
       self.last_id_vehic = ""
       self.first = True
-      self.nb_no_safety = 0
-      self.nb_ttc = 0      
-      self.nb_speed = 0
-      self.cumul_speed = 0.0
+      self.nb_dangerous = 0
+      self.nb = 0;      
 
    # Call when an element starts
    def startElement(self, tag, attributes):
@@ -42,28 +40,23 @@ class VehicleHandler( xml.sax.ContentHandler ):
          
          if(self.first):
           self.first = False
-	 #elif (pos > 3000.0 and pos < 5000.0):
-         elif(not ((self.lane_id == "gneE0_0" or self.lane_id == "gneE0_1") and  pos < 4000.0)):
+         else:
           dist = math.fabs(self.last_pos - pos)
           rel_speed = math.fabs(self.last_speed - speed)     
-          if (rel_speed == 0.0):
-            ttc = 1000000.0    
-          else:
-            ttc = (dist - self.LENGHT) / rel_speed
-            
-          self.nb_ttc += 1
-          if (ttc < self.THRESHOLD): 
-            #print self.time, self.lane_id, id_vehic, pos, speed, self.last_id_vehic, self.last_pos, self.last_speed, dist, rel_speed, ttc
-            self.nb_no_safety += 1
-          if (speed > 0.0):
-            self.nb_speed += 1
-            self.cumul_speed += speed
+          if (rel_speed > 0.0 and id_vehic == "dangerous_car"):
+            if (dist < self.DIST_THRESHOLD):
+              self.nb_dangerous += 1 
+	    self.nb += 1
+          #print self.time, self.lane_id, id_vehic, pos, speed, self.last_id_vehic, self.last_pos, self.last_speed, dist, rel_speed      
+
           
          self.last_pos = pos
          self.last_speed = speed
          self.last_id_vehic = id_vehic
 
+ 
   
+
 if ( __name__ == "__main__"):
    
    #print "self.time, self.lane_id, id_vehic, pos, speed, self.last_id_vehic, self.last_pos, self.last_speed, dist, rel_speed, ttc"
@@ -79,8 +72,7 @@ if ( __name__ == "__main__"):
    try:
     #parser.parse("log/sumo/netstate.dump")
     parser.parse(sys.argv[1])
-    print Handler.nb_ttc, Handler.nb_no_safety, Handler.nb_no_safety / float(Handler.nb_ttc), Handler.cumul_speed / Handler.nb_speed
-   except:
-    print Handler.nb_ttc, Handler.nb_no_safety, Handler.nb_no_safety / float(Handler.nb_ttc), Handler.cumul_speed / Handler.nb_speed
-
+    print float(Handler.nb_dangerous) / Handler.nb
+   except Exception,e:
+    print("Voici l'erreur :", e)
 
