@@ -2,7 +2,7 @@
 
     <scenario>
         <begin value="0"/>
-        <end value="280"/>
+        <end value="500"/>
         <penetration-rate value="100"/>                
         <facilities-config-file value="facilities-config-file.xml"/>
 	<message-reception-window value="5"/>
@@ -30,7 +30,7 @@
 
     <logs>
         <ics-log-path value="log/ics/ics-log.txt"/>
-	<ics-log-level value="INFO"/>
+	<ics-log-level value="ERROR"/>
 	<ics-log-time-size value="100"/>
         <ns3-log-path value="log/ns/ns3-log.txt"/>
     </logs>

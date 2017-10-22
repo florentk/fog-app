@@ -9,12 +9,18 @@
 
     <output>
         <netstate-dump value="../log/sumo/netstate.dump"/>
+    	<tripinfo-output value="../log/sumo/tripinfo" />
+    	<tripinfo-output.write-unfinished value="false"/>        
     </output>
 
     <time>
         <begin value="0"/>
-        <end value="280"/>
+        <end value="840"/>
     </time>
+
+    <emissions>
+        <device.emissions.probability value="1.0" />
+    </emissions>
 
     <traci_server>
         <remote-port value="5500"/>
