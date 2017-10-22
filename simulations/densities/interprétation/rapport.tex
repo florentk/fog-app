@@ -1,0 +1,126 @@
+\documentclass[a4paper,10pt]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[pdftex]{graphicx}
+
+% Title Page
+\title{Synthèse des résultats}
+\author{Florent Kaisser}
+
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\end{abstract}
+
+\section*{Paramètres de simulations}
+
+\begin{table}[!t]
+\label{tab:parametres}
+\begin{center}
+\begin{tabular}{|c||c|}
+%\begin{tabular}{|c|p{5cm}|p{3cm}|}
+  \hline
+   \emph{Parameters}&\emph{Values}\\
+\hline
+Simulation area& $10 km$ with $2x2$ lanes\\
+  \hline
+Simulation time& $840 s$ (with  $100 s$ of neutral period)\\
+\hline
+Hazardous zone radius& $0.5 Km$\\
+\hline
+Alert zone & $2 km$\\
+\hline
+V2V Fog alert interval & $5s$\\
+\hline
+V2I Fog alert interval & $1s$\\
+\hline
+Dangerous vehicle alert interval & $1s$\\
+\hline
+Stopped vehicle alert interval & $1s$\\
+\hline
+Initial speed & $40, 30 or 25 m/s$   (standard, slow car, truck) \\
+\hline
+Emissions class& $P\_7\_7$ or $HDV\_3\_3$  (car or truck) \\
+\hline
+Reduced speed & $20m/s$\\
+\hline
+Duration of Slowdown & $5s$\\
+\hline
+Vehicle densities & $500,1000,1500,2500 and 4500 $ vehicles per hour on each direction\\ 
+\hline
+Propagation loss & $46.5777dB$\\
+\hline
+Tx Power & $20 dBm$\\
+\hline
+Tx Gain & $ 7.0 dBi$\\
+\hline
+Rx Gain & $7.0 dBi$\\
+\hline
+RSUs postions  & $3 km$ and $7 km$ \\
+\hline
+Scenarios samples & 10 \\
+\hline
+ 
+\end{tabular}
+\end{center}
+\end{table}
+
+\section*{Metriques}
+
+
+\subsection*{TTC}
+
+Time to Colision. Nous considérons que deux vehicule normal qui se suivent avec un $TTC < 3 s$  n'est pas en sécurité. Nous calculons alors deux métriques :
+
+\begin{itemize}
+ \item ``Cumul of time with TTC < 3 s'' : Exprimé en seconde. Le temps cumulé passé  par tous les véhicules d'un scénario en non sécurité. Plus il est faible, plus la route est sécurisée.
+ \item ``Part of time with TTC < 3 s'' : Compris entre 0 et 1. La part de temps passé  par tous les véhicules d'un scénario en situation non sécurité. C'est la métrique ci-dessus divisé par le temps total de la simulation afin de la normaliser. Plus elle faible, plus la route est sécurisée.
+\end{itemize}
+
+\subsection*{Reception rate}
+
+Seulement pour les scénarios ``Fog alert'' en V2V ou V2I. C'est le nombre de véhicules entrant dans la zone de brouillard ayant recu l'alerte sur le nombre total de véhicules entrant dans la zone de brouillard. Une valeur éleve indique un bonne propagation des messages d'alertes.
+
+\subsection*{Duration}
+
+Temps moyen en second nécessaire pour un véhicule pour parcourir les $10 km$ du tronçon. Une valeur élevée est prujudiciable pour l'utilisateur de la route.
+
+\subsection*{Emission}
+
+Volume de CO2 en gramme emis par une classe de véhicules pendant le scénario. Le modèle utilisé pour calculer la metrique est basé sur le Handbook ``Emission Factors for Road Transport (HBEFA)''.
+
+\subsection*{Security distance}
+
+Utilisé pour le scénario ``Dangerous vehicle''. Nous considérons qu'un véhicule suivant à moins de $100 m$ un véhicule dangereux est en situation de non sécurité. Comme pour le TTC, nous calculons la part de temps passé par tous les véhicules d'un scénario en situation de non sécurité.
+
+\section*{Scenarios}
+
+\subsection*{Baseline}
+
+Le scenarion ``baseline'' consiste à lancer la simulation avec SUMO seul sans ns-3. Cela permet d'obtenir les statistiques de base sur la dynamique des vehicules : TTC, durée des trajets et emissions.
+
+\subsection*{V2V Fog alert}
+
+
+\subsection*{V2I Fog alert}
+
+\subsection*{Stopped vehicle}
+
+\subsection*{Dangerous vehicle}
+
+
+description of implementation of dangerous and stopped
+
+\section*{Results}
+
+\begin{figure}
+    \begin{center}
+         \includegraphics[width=10cm]{fog_alert/TTC_part}
+    \end{center}
+  \caption{ Fog alert results}
+  \label{fig:ttc_part}
+\end{figure}
+
+
+\end{document}          
