@@ -198,6 +198,8 @@
 #define VALUE_GET_ROUTE_VARIABLE	0x04
 #define VALUE_SET_SPEED			0x05
 #define VALUE_SLOW_DOWN                 0x06
+#define VALUE_CHANGE_LANE       0x07
+#define VALUE_TAU       0x08
 
 #define TYPE_ERROR			0x00
 #define TYPE_EDGE_ID			0x01
@@ -213,6 +215,8 @@
 #define EDGE_ID				0x03
 #define ROUTE_ID			0x04
 #define SPEED				0x05
+
+#define DANGEROUS_VEHICLE 0x11
 
 #define VALUE_GET_DATA_BY_RESULT_CONTAINER_ID      0x01
 #endif

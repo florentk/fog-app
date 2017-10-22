@@ -20,6 +20,8 @@
 #include <utils/options/OptionsIO.h>
 #include <utils/xml/XMLSubSys.h>
 
+#include <stdlib.h> /* atoi */
+
 #ifdef _MSC_VER
 #include <windows_config.h>
 #else
@@ -109,8 +111,8 @@ fillOptions()
     oc.doRegister("alertspeedlimit", new Option_Float());
     oc.addDescription("alertspeedlimit", "Alert", "Defines the speed limit on alert");    
    
-    oc.doRegister("vehiclefogalert", new Option_Bool());
-    oc.addDescription("vehiclefogalert", "Alert", "Defines if vehicles send an alert on enter in fog");    
+    oc.doRegister("vehiclefogalert", new Option_String());
+    oc.addDescription("vehiclefogalert", "Alert", "Defines vehicles whish broadcast an alert on enter in fog. \"none\" : no alert send, all : \"all\" node in fog send alerts, [id] : only this vehicle sends alerts");    
     
     oc.doRegister("rsualert", new Option_Bool());
     oc.addDescription("rsualert", "Alert", "Defines if RSU send alert");   
@@ -127,7 +129,8 @@ fillOptions()
     oc.doRegister("noalertmessageifisslowed", new Option_Bool());
     oc.addDescription("noalertmessageifisslowed", "Alert", "Defines the resend alert when the vehicule is slowed");        
     
-              
+    oc.doRegister("dangerousvehicle", new Option_String());
+    oc.addDescription("dangerousvehicle", "Alert", "Defines dangerous vehicles whish broadcast an alert \"none\" : no alert send, [id] send dangerous vehicle alert");                
 }
 
 /* -------------------------------------------------------------------------
@@ -265,7 +268,12 @@ checkOptions()
     if (!oc.isSet("noalertmessageifisslowed")) {
         MsgHandler::getErrorInstance()->inform("Missing the resend alert when the vehicule is slowed");
         ret = false;
-    }     
+    }   
+    if (!oc.isSet("dangerousvehicle")) {
+        MsgHandler::getErrorInstance()->inform("Missing the dangerous vehicle config");
+        ret = false;
+    }       
+      
     
     return ret;
 }
@@ -326,12 +334,29 @@ int main(int argc, char **argv)
         if (ApplicationLogic::SetAlertRadius(oc.getFloat("radiusalert")) == EXIT_FAILURE) throw ProcessError();
         if (ApplicationLogic::SetAlertTimeOut(oc.getInt("timeoutalert")) == EXIT_FAILURE) throw ProcessError();
         if (ApplicationLogic::SetAlertSpeedlimit(oc.getFloat("alertspeedlimit")) == EXIT_FAILURE) throw ProcessError();
-        if (ApplicationLogic::SetVehicleAlert(oc.getBool("vehiclefogalert")) == EXIT_FAILURE) throw ProcessError();   
-        if (ApplicationLogic::SetRSUAlert(oc.getBool("rsualert")) == EXIT_FAILURE) throw ProcessError();   
-        if (ApplicationLogic::SetStoppedVehicleAlert(oc.getBool("vehiclestoppedalert")) == EXIT_FAILURE) throw ProcessError();                   
+        if (ApplicationLogic::SetStoppedVehicleAlert(oc.getBool("vehiclestoppedalert")) == EXIT_FAILURE) throw ProcessError();   
+        if (ApplicationLogic::SetRSUAlert(oc.getBool("rsualert")) == EXIT_FAILURE) throw ProcessError();                   
         if (ApplicationLogic::SetAlertInterval(oc.getInt("alertinterval")) == EXIT_FAILURE) throw ProcessError();
         if (ApplicationLogic::SetDurationOfSlowdown(oc.getInt("durationofslowdown")) == EXIT_FAILURE) throw ProcessError();       
-        if (ApplicationLogic::SetNoAlertMessageIfIsSlowed(oc.getBool("noalertmessageifisslowed")) == EXIT_FAILURE) throw ProcessError();     
+        if (ApplicationLogic::SetNoAlertMessageIfIsSlowed(oc.getBool("noalertmessageifisslowed")) == EXIT_FAILURE) throw ProcessError(); 
+        
+        
+        std::string dangerousvehicle = oc.getString("dangerousvehicle");
+        
+        if(dangerousvehicle.compare("none") == 0) {
+           if (ApplicationLogic::SetDangerousVehicle(-1) == EXIT_FAILURE) throw ProcessError();     
+        } else if (ApplicationLogic::SetDangerousVehicle(atoi(dangerousvehicle.c_str())) == EXIT_FAILURE) throw ProcessError(); 
+           
+        
+        std::string vehiclestoppedalert = oc.getString("vehiclefogalert");
+        
+        if(vehiclestoppedalert.compare("none") == 0) {
+           if (ApplicationLogic::SetVehicleAlert(false) == EXIT_FAILURE) throw ProcessError();     
+        } else if(vehiclestoppedalert.compare("all") == 0) {
+           if (ApplicationLogic::SetVehicleAlert(true) == EXIT_FAILURE) throw ProcessError(); 
+        } else if (ApplicationLogic::SetAlertVehicleInFogId(atoi(vehiclestoppedalert.c_str())) == EXIT_FAILURE) throw ProcessError(); 
+        
+        
        
         // Start the server
         Server::processCommands(oc.getInt("socket"));

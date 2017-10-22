@@ -10,6 +10,11 @@
 #define AP_MASK 0x10000
 #define IsAP(i) (i & AP_MASK)
 
+#define SPECIAL_VEHICLE_MASK 0x1000
+#define IsSPECIAL_VEHICLE(i) (i & SPECIAL_VEHICLE_MASK)
+
+#define VEHICLE_LENGTH 6.5
+
 #include "foreign/tcpip/storage.h"
 #include <vector>
 #include <map>
@@ -84,7 +89,9 @@ struct Vehicle {
     float y;
     /// @brief current vehicle speed
     float speed;
-    /// @brief the current direction of the vehicle.
+    /// @brief current time to colision
+    float ttc;    
+    /// @brief the current direction of the vehicle.    
     float direction;   
     /// @brief Reference to behind vehicle's
     int behindId;
@@ -130,6 +137,9 @@ public:
 
     /// @brief Flag to indicate whether the returning car subscription is set or not
     static bool m_returnCarAreaIsSet;
+    
+    /// @brief the last vehicle which changed Tau
+    static int m_vehicleWithModifiedTau;
 
     /// @brief Intializes CAM area values
     static int SetCamArea(float x, float y, float radius);
@@ -179,11 +189,17 @@ public:
     /// @brief Intializes the Minimum interval between broadcast alert in second
     static int SetAlertInterval(int interval); 
         
-     /// @brief Intializes the Duration of slowdown in second
+     /// @brief Initializes the Duration of slowdown in second
     static int SetDurationOfSlowdown(int duration);   
     
+    /// @brief Initializes the id of the vehicle in fog which send alert 
+    static int SetAlertVehicleInFogId(int id);      
+    
     /// @brief enable or disable the resend alert when the vehicule is slowed
-    static int SetNoAlertMessageIfIsSlowed(bool enable);     
+    static int SetNoAlertMessageIfIsSlowed(bool enable);  
+
+    /// @brief Initializes the id of dangerous vehicle 
+    static int SetDangerousVehicle(int id);  
     
     /// @brief Skeleton to unsubcription. Demo app never requests it
     static bool DropSubscription(int subscriptionType);
@@ -234,12 +250,18 @@ private:
     
     /// @brief return the id of followed vehicle on same lane
     static int FirstVehicleOnSameLane(std::vector<Vehicle>& vehicles,std::vector<Vehicle>::const_iterator v);
+
+    /// @brief compute the relativ speed between idNode1 and idNode2
+    static float ComputeRelSpeed(int idNode1,int idNode2);
     
-    /// @brief return the distance with the behind vehicle's
-    static float DistanceWithBehindVehicle(int idNode);    
+    /// @brief compute the TTC between idNode1 and idNode2
+    static float ComputeTTC(int idNode1,int idNode2);
     
     /// @brief return true if the node idNode is in a fog
     static bool IsInFog(int idNode);
+    
+    /// @brief return true if the node idNode is a broadcaster
+    static bool IsBroadcaster(int idNode);
     
     /// @brief return true if the vehicle is stopped
     static bool IsStoppedInFog(int idNode);  
@@ -258,6 +280,9 @@ private:
     
     /// @brief return true if time interval is expired 
     static bool IsTimeToSendAlert(int nodeId, int timestep);
+    
+    /// @brief return true if nodeId is the dangerous vehicle
+    static bool IsDangerousVehicle(int nodeId);
     
     /// @brief return a initialised subscription storage
     /// @input subsType type of subscription
@@ -284,6 +309,13 @@ private:
 	/// @brief create a subscription to slow down vehicle
     static void CreateSlowDownTrafficSimSubscription(int timestep, int nodeId, float speedLimit, int durationOfSlowdown, tcpip::Storage& mySubsStorage);
     
+    /// @brief create a subscription to force a change lane
+    static void CreateChangeLaneSimSubscription(int timestep, int destinationId, unsigned char idLane, int durationOfChangedLane, tcpip::Storage& mySubsStorage);
+    
+    /// @brief create a subscription to set tau
+    static void CreateChangeTauSimSubscription(int timestep, int destinationId, float tau, tcpip::Storage& mySubsStorage);    
+ 
+    
     /// @brief create a subscription to set speed of a vehicle
     static void CreateSetSpeedTrafficSimSubscription(int timestep, int nodeId, float speedLimit, tcpip::Storage& mySubsStorage);
     
@@ -304,6 +336,15 @@ private:
     
     /// @brief process when is alert expired
     static void ResetSpeed(int timestep, int destinationId, tcpip::Storage& mySubsStorage);
+    
+    /// @brief process for change lane action
+    static void ChangeLane(int timestep, int destinationId, tcpip::Storage& mySubsStorage);
+    
+    /// @brief process for change tau
+    static void ChangeTau(int timestep, int destinationId, float tau,tcpip::Storage& mySubsStorage);    
+    
+    /// @brief process for dangerous vehicle action action
+    static void DangerousVehicleAction(int timestep, int dangerouseVehicleId , int nodeId, tcpip::Storage& mySubsStorage);
     
     /// @brief process action
     static bool LauchAction(int timestep, int action, int senderId , int destinationId, tcpip::Storage& mySubsStorage);
@@ -342,7 +383,10 @@ private:
     static float m_alertSpeedlimit;    
     
     /// @brief Sending fog alert actif or not
-    static bool m_alertFog;   
+    static bool m_alertFog;  
+    
+    /// @brief Specify a vehicle in fog which broadcast alert. If -1, all vehicle in fog broadcasts alert
+    static int m_alertVehicleInFogId;       
     
     /// @brief Sending RSU alert actif or not
     static bool m_alertRSU;   
@@ -362,6 +406,9 @@ private:
     /// @brief if true, the vehicle break on arrival in fog   
     static bool m_vehicleBreakInFog;   
             
+    /// @brief Specify a dangerous vehicle 
+    static int m_dangerousVehicle;               
+                   
 };
 
 #endif

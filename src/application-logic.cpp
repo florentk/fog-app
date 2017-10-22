@@ -54,7 +54,9 @@ bool ApplicationLogic::m_noAlertMessageIfIsSlowed=false;
 bool ApplicationLogic::m_alertFog=false;
 bool ApplicationLogic::m_alertRSU=false; 
 bool ApplicationLogic::m_alertStoppedVehicle=false; 
-bool ApplicationLogic::m_vehicleBreakInFog=false;     
+bool ApplicationLogic::m_vehicleBreakInFog=false;  
+int ApplicationLogic::m_alertVehicleInFogId=-1; // All vehicle   
+int ApplicationLogic::m_dangerousVehicle=-1; // No dangerous vehicle
 /////////////////////
 
 /////////////////////
@@ -79,7 +81,10 @@ map<int, int> ApplicationLogic::m_carLastSpeedChangeTime;
 map<int, int> ApplicationLogic::m_carLastSlowedTime;   
 map<int, int> ApplicationLogic::m_vehiclesInFogOnceTime; 
 map<int, int> ApplicationLogic::m_lastBroadcast; 
+int ApplicationLogic::m_vehicleWithModifiedTau=-1; // No vehicle with modified Tau
 //----------------------
+
+
 
 /////////////////////
 
@@ -116,29 +121,6 @@ bool SortByPos (Vehicle i,Vehicle j) {
 
 }
 
-int ApplicationLogic::FirstVehicleOnSameLane(vector<Vehicle>& vehicles,vector<Vehicle>::const_iterator v) {
-
-	if(v->direction == 90){
-		
-		for (vector<Vehicle>::const_iterator it = v+1; it != vehicles.end() ; it++) {  
-			if(it->y == v->y)
-				return it->id;
-		}
-	
-	}
-	
-	if(v->direction == 270 && v != vehicles.begin()){
-		
-		for (vector<Vehicle>::const_iterator it = v-1; it != vehicles.begin() ; it--) {  
-			if(it->y == v->y)
-				return it->id;
-		}
-	
-	}	
-	
-	return -1;
-}
-
 bool
 ApplicationLogic::ProcessSubscriptionCarsInZone(vector<Vehicle>& vehicles)
 {
@@ -151,9 +133,8 @@ ApplicationLogic::ProcessSubscriptionCarsInZone(vector<Vehicle>& vehicles)
     for (vector<Vehicle>::const_iterator it = vehicles.begin() ; it != vehicles.end() ; it++) {   
       Vehicle v =  *it;
          
-         
-      /* no work with not straight road */
       v.behindId = ApplicationLogic::FirstVehicleOnSameLane(vehicles,it);
+      v.ttc = ApplicationLogic::ComputeTTC(v.id,v.behindId);
       
       m_vehiclesInFog.insert(std::pair<int,Vehicle>(v.id,v)); 
     }
@@ -180,7 +161,7 @@ ApplicationLogic::RequestReceiveSubscription(int nodeId, int timestep) {
         (*it).second == true;  // will not ask twice...
       }
 
-    if (m_alertFog || m_alertStoppedVehicle)
+    if (m_alertFog || m_alertStoppedVehicle || m_dangerousVehicle > -1)
 	    CreateGeobroadcastReceiveSubscription(nodeId, timestep, mySubsStorage);
 	    
 	  if (m_alertRSU)
@@ -315,6 +296,15 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
     bool isSlowed = NodeIsSlowed(senderId,timestep);
     vector<AppMessage> results;
     if (     timestep >= m_appStartTimeStep  ) { 
+        /*stringstream log;
+         log<< "test nedd braodcast " <<  m_alertFog
+          <<  !IsAP(senderId) 
+          <<  FogIsActive(timestep) 
+          <<  IsInFog(senderId) 
+          <<  !(m_noAlertMessageIfIsSlowed && isSlowed) 
+          <<  IsTimeToSendAlert(senderId,timestep)
+          <<  IsBroadcaster(senderId);
+          Log::Write((log.str()).c_str(), kLogLevelInfo);*/
          
 	    //test if the vehicle need to broacast a new alert
         if(  m_alertFog
@@ -323,6 +313,7 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
           && IsInFog(senderId) 
           && !(m_noAlertMessageIfIsSlowed && isSlowed) 
           && IsTimeToSendAlert(senderId,timestep)
+          && IsBroadcaster(senderId)
         ){
           //Broadcast the alert
           stringstream log;
@@ -359,7 +350,7 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
           log<< "Stopped Vehicle " << senderId << " broadcast alert at " << timestep;
           Log::Write((log.str()).c_str(), kLogLevelInfo);
           
-          NewAppMessage(timestep,senderId,VALUE_SLOW_DOWN,kToBeScheduled);           
+          NewAppMessage(timestep,senderId,VALUE_CHANGE_LANE,kToBeScheduled);           
         
         }
                    
@@ -371,7 +362,18 @@ ApplicationLogic::SendBackExecutionResults(int senderId, int timestep)
           ProcessStatistic(timestep,senderId,isSlowed);
           //I must reduce my speed ! 		      
 	    		NewAppMessage(timestep,senderId,VALUE_SET_SPEED,kToBeApplied);
-	    }
+	      }
+	      
+	     if( IsDangerousVehicle(senderId) )
+         {
+        
+          //Broadcast the alert
+          stringstream log;
+          log<< "Dangerouse vehicle " << senderId << " broadcast alert at " << timestep;
+          Log::Write((log.str()).c_str(), kLogLevelInfo);
+          
+          NewAppMessage(timestep,senderId,DANGEROUS_VEHICLE,kToBeScheduled);    
+        }
 	    
       // Keep in safe place all the results to send back to the iCS
       results = m_messages; 	
@@ -520,6 +522,23 @@ void ApplicationLogic::CreateSlowDownTrafficSimSubscription(int timestep, int de
                            
 }  
 
+
+void ApplicationLogic::CreateChangeLaneSimSubscription(int timestep, int destinationId, unsigned char idLane, int durationOfChangedLane, tcpip::Storage& mySubsStorage){
+    InitSubscription(SUB_APP_CMD_TRAFF_SIM, 1 + 4 + 1 + 4, mySubsStorage);	
+	mySubsStorage.writeUnsignedByte(VALUE_CHANGE_LANE); //to change the speed
+	mySubsStorage.writeInt(destinationId); //Destination node to set its maximum speed.
+	mySubsStorage.writeChar(idLane); //id of lane
+	mySubsStorage.writeInt(durationOfChangedLane); //duration of lane chage                      
+                           
+}  
+
+void ApplicationLogic::CreateChangeTauSimSubscription(int timestep, int destinationId, float tau, tcpip::Storage& mySubsStorage){
+    InitSubscription(SUB_APP_CMD_TRAFF_SIM, 1 + 4 + 4, mySubsStorage);	
+	mySubsStorage.writeUnsignedByte(VALUE_TAU); //to change the speed
+	mySubsStorage.writeInt(destinationId); //Destination node to set its maximum speed.
+	mySubsStorage.writeFloat(tau); //id of lane   
+}
+
 void ApplicationLogic::Break(int timestep, int destinationId,  tcpip::Storage& mySubsStorage) {
     stringstream log;
     
@@ -580,26 +599,84 @@ void ApplicationLogic::ResetSpeed(int timestep, int destinationId, tcpip::Storag
     m_carLastSpeedChangeTime.erase(destinationId);
 }
 
+void ApplicationLogic::ChangeLane(int timestep, int destinationId, tcpip::Storage& mySubsStorage) {
+
+    stringstream log;
+    log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " change lane !";
+    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
+    CreateChangeLaneSimSubscription(timestep, destinationId, 1, 90, mySubsStorage);
+}
+
+void ApplicationLogic::ChangeTau(int timestep, int nodeId, float tau, tcpip::Storage& mySubsStorage) {
+    stringstream log;
+    log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << nodeId << " tau changed at " << tau << " !";
+    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+    
+    if(m_vehicleWithModifiedTau != nodeId){
+      m_vehicleWithModifiedTau = nodeId;
+      CreateChangeTauSimSubscription(timestep, nodeId, tau, mySubsStorage);
+    }
+}
+
+void ApplicationLogic::DangerousVehicleAction(int timestep, int dangerousVehicleId , int nodeId, tcpip::Storage& mySubsStorage) {
+    stringstream log;
+    log << "APP --> [ApplicationLogic] LauchAction DANGEROUS_VEHICLE " << dangerousVehicleId << " " << nodeId <<  " ";
+    Vehicle v = GetVehicle(nodeId);
+    
+    //get the behind vehicle
+    if (v.id < 0 || v.behindId < 0){
+      log << -1;
+    } else {
+      log << v.behindId;
+      
+      Log::Write((log.str()).c_str(), kLogLevelError);
+      
+      if(v.behindId == dangerousVehicleId){
+        if (m_vehicleWithModifiedTau > -1)
+          ChangeTau(timestep, m_vehicleWithModifiedTau, 1.0, mySubsStorage);
+        ChangeTau(timestep, nodeId, 5.0, mySubsStorage);  
+      }
+    }             
+}
+
 bool ApplicationLogic::LauchAction(int timestep, int action, int senderId , int destinationId, tcpip::Storage& mySubsStorage) {
                            
-    if(IsAP(senderId) || !IsBehind(senderId,destinationId))   
-      return false;               
-                           
-    switch (action){
-        case VALUE_SLOW_DOWN:
-            StartSlowDown(timestep, destinationId, mySubsStorage);
-            return true;
-        case VALUE_SET_SPEED:
-            Break(timestep, destinationId, mySubsStorage);
-            return true;           
-        default :
-        {
-            stringstream log;
-            log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " bad action";
-            Log::Write((log.str()).c_str(), kLogLevelError); 
-        }                       
-    }
+      stringstream log;
+      log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() action " << " action";
+      Log::Write((log.str()).c_str(), kLogLevelError);   
+
+    if(IsAP(senderId) || IsBehind(senderId,destinationId)){    
     
+      stringstream log;
+      log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() ids" << senderId << " " << destinationId;
+      Log::Write((log.str()).c_str(), kLogLevelError);     
+                  
+      switch (action){
+          case VALUE_SLOW_DOWN:
+              StartSlowDown(timestep, destinationId, mySubsStorage);
+              return true;
+              
+          case VALUE_SET_SPEED:
+              Break(timestep, destinationId, mySubsStorage);
+              return true;   
+
+          case VALUE_CHANGE_LANE:
+              ChangeLane(timestep, destinationId, mySubsStorage);
+              return true;   
+              
+          case DANGEROUS_VEHICLE:
+              DangerousVehicleAction(timestep, senderId, destinationId, mySubsStorage);
+              return true;
+                      
+          default :
+          {
+              stringstream log;
+              log << "APP --> [ApplicationLogic] CheckForRequiredSubscriptions() Node Vehicle " << destinationId << " bad action";
+              Log::Write((log.str()).c_str(), kLogLevelError); 
+          }                       
+      }
+    }
     return false;
 }                           
                            
@@ -640,7 +717,30 @@ void ApplicationLogic::ProcessStatistic(int timestep, int senderId, bool isSlowe
         m_vehiclesInFogOnceTime.insert(std::pair<int,int>(senderId,-1)); 
     }
 
-}  
+} 
+
+int ApplicationLogic::FirstVehicleOnSameLane(vector<Vehicle>& vehicles,vector<Vehicle>::const_iterator v) {
+
+	if(v->direction == 90){
+		
+		for (vector<Vehicle>::const_iterator it = v+1; it != vehicles.end() ; it++) {  
+			if(it->y == v->y)
+				return it->id;
+		}
+	
+	}
+	
+	if(v->direction == 270 && v != vehicles.begin()){
+		
+		for (vector<Vehicle>::const_iterator it = v-1; it != vehicles.begin() ; it--) {  
+			if(it->y == v->y)
+				return it->id;
+		}
+	
+	}	
+	
+	return -1;
+}
 
 bool 
 ApplicationLogic::IsTimeToSendAlert(int nodeId, int timestep){
@@ -746,6 +846,13 @@ ApplicationLogic::IsInFog(int idNode){
     return GetVehicle(idNode).id!=-1;
 }
 
+bool ApplicationLogic::IsBroadcaster(int idNode){
+    return  IsAP(idNode) 
+            || (m_alertVehicleInFogId ==-1)
+            || (idNode == m_alertVehicleInFogId);
+}
+
+
 float 
 ApplicationLogic::ComputeDistance(int idNode1,int idNode2){
     Vehicle v1 = GetVehicle(idNode1);
@@ -755,14 +862,22 @@ ApplicationLogic::ComputeDistance(int idNode1,int idNode2){
 	return v2.x - v1.x;
 }
 
-float ApplicationLogic::DistanceWithBehindVehicle(int idNode){
-
-	
-
+float 
+ApplicationLogic::ComputeRelSpeed(int idNode1,int idNode2){
+    Vehicle v1 = GetVehicle(idNode1);
+    Vehicle v2 = GetVehicle(idNode2); 
+    
+    if(v1.id * v2.id < 0)
+    	return -1.0;
+    	
+	return v2.speed - v1.speed;
 }
 
-
-
+float 
+ApplicationLogic::ComputeTTC(int idNode1,int idNode2){
+	return (ComputeDistance(idNode1,idNode2) - VEHICLE_LENGTH) 
+			/ ComputeRelSpeed(idNode1, idNode2) ;
+} 
 
 bool
 ApplicationLogic::IsSameDirection(int idNode1,int idNode2){
@@ -804,6 +919,11 @@ bool
 ApplicationLogic::IsStoppedInFog(int idNode){
     Vehicle v = GetVehicle(idNode);
     return (v.id!=-1 && v.speed < 0.1);
+}
+
+bool 
+ApplicationLogic::IsDangerousVehicle(int nodeId){
+  return nodeId == m_dangerousVehicle;
 }
 
 float 
@@ -1093,6 +1213,30 @@ int ApplicationLogic::SetBreakInFog(bool enable){
    
     return EXIT_SUCCESS;   
 }  
+
+int ApplicationLogic::SetAlertVehicleInFogId(int id){
+
+    stringstream log;
+    log << "Id of vehicle which send alert : " << id;
+    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
+    m_alertVehicleInFogId = id;
+
+    return EXIT_SUCCESS;   
+}  
+
+int ApplicationLogic::SetDangerousVehicle(int id){
+
+    stringstream log;
+    log << "Id of dangerous : " << id;
+    Log::Write((log.str()).c_str(), kLogLevelInfo); 
+
+    m_dangerousVehicle = id;
+
+    return EXIT_SUCCESS;   
+} 
+    
+
      
 
 //END Setters

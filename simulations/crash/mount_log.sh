@@ -1,1 +1,0 @@
-/home/florent/Projets/fog-app/simulations/defaults/mount_log.sh
