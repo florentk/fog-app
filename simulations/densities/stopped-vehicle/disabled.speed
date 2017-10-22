@@ -1,0 +1,15 @@
+alert-disabled/config/1000/log/sumo/netstate.dump
+3 31.4523113488
+
+alert-disabled/config/1500/log/sumo/netstate.dump
+6 31.3297159221
+
+alert-disabled/config/3000/log/sumo/netstate.dump
+7 31.3228629396
+
+alert-disabled/config/4500/log/sumo/netstate.dump
+21 31.2970295911
+
+alert-disabled/config/500/log/sumo/netstate.dump
+5 31.1134034653
+

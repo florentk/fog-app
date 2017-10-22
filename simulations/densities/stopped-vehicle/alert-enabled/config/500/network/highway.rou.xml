@@ -1,0 +1,25 @@
+
+
+
+<routes>
+    <vTypeDistribution id="vehicles">
+        <vType id="car1" accel="2.0" decel="4.5" sigma="0.5" color="0,1,0" length="6.5" maxSpeed="30"  guiShape="passenger" probability="0.2" emissionClass="P_7_7" />
+        <vType id="car2" accel="1.8" decel="4.5" sigma="0.5" color="0,0,1" length="6.5" maxSpeed="40"  guiShape="passenger" probability="0.7" emissionClass="P_7_7" />
+        <vType id="truck" accel="1.0" decel="3.5" sigma="0.5" color="0,1,1" length="6.5" maxSpeed="25"  guiShape="truck" probability="0.1" emissionClass="HDV_3_3" />               
+    </vTypeDistribution>   
+
+
+   <flow id="0" type="vehicles" depart="0"  begin="0" end="100" vehsPerHour="500">
+         <route  color="1,1,0" edges="gneE0"/>
+   </flow>
+   <flow id="1" type="vehicles" depart="0"  begin="0" end="100" vehsPerHour="500">
+         <route  color="1,1,0" edges="-gneE0"/>  
+    </flow>
+
+
+   <vehicle id="stoped_car" depart="0" color="1,0,0">
+        <route color="1,1,0" edges="gneE0"/>
+	<stop lane="gneE0_0" endPos="5000" until="5000"/> 
+   </vehicle>
+
+</routes>

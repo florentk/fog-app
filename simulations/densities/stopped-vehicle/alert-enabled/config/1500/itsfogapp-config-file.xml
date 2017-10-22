@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.sf.net/xsd/demoappConfiguration.xsd">
+
+    <general>
+        <start value="100"/>
+        <socket value="1986"/>
+        <logfile value="log/app/itsfogapplogfile.txt"/>
+    </general>
+
+    <camareasubscription>
+        <xcam value="5000"/>
+        <ycam value="50"/>
+        <radiuscam value="5000"/>
+    </camareasubscription>
+
+    <returningcarareasubscription>
+        <xcar value="5000"/>
+        <ycar value="50"/>
+        <radiuscar value="500"/>
+    </returningcarareasubscription>
+    
+    <fogarea>
+        <xfog value="5000"/>
+        <yfog value="50"/>
+        <radiusfog value="500"/>
+        <startfog value="100"/>
+        <endfog value="500"/>
+	<vehiclebreakinfog value="false"/>
+    </fogarea>   
+    
+    
+    <alert>
+      <vehiclefogalert value="1000"/>
+      <rsualert value="false"/>
+      <vehiclestoppedalert value="true"/>      
+      <radiusalert value="2000"/>
+      <timeoutalert value="200"/>
+      <alertspeedlimit value="20"/>     
+      <alertinterval value="5"/>
+      <durationofslowdown value="5"/>
+      <noalertmessageifisslowed value="false"/>
+    </alert>          
+        
+
+
+</configuration>

@@ -1,0 +1,270 @@
+sumo: aucun processus trouvé
+main-inci5: aucun processus trouvé
+java: aucun processus trouvé
+Installer type=ns3::WaveVehicleInstaller name=WaveVehicle
+CONFIGURATION-MANAGER.XML calling Pathfile= ./ns-3_files/confWaveVehicle2.xml
+WAVE-INSTALLER: trying to read file from path = ./ns-3_files/confWaveVehicle2.xml
+Reading config file for WAVE
+Tag read in ConfigurationFile=waveVehicle
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=yansWifiChannel
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=propagationLoss
+propagationLoss nameModel=ns3::LogDistancePropagationLossModel
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=propagationLoss
+propagationLoss attribute=ReferenceLoss value=46.6777
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=propagationLoss
+propagationLoss attribute=Exponent value=3
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=yansWifiChannel
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=yansWifiPhy
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=wavePhyCCH
+wavePhyCch attribute=TxGain value=7.0
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=wavePhyCCH
+wavePhyCch attribute=RxGain value=7.0
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=wavePhyCCH
+wavePhyCch attribute=TxPowerLevels value=1
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=wavePhyCCH
+wavePhyCch attribute=TxPowerEnd value=20
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=wavePhyCCH
+wavePhyCch attribute=TxPowerStart value=20
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=wavePhySCH
+wavePhySch attribute=TxGain value=7.0
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=wavePhySCH
+wavePhySch attribute=RxGain value=7.0
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=wavePhySCH
+wavePhySch attribute=TxPowerLevels value=1
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=wavePhySCH
+wavePhySch attribute=TxPowerEnd value=20
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=wavePhySCH
+wavePhySch attribute=TxPowerStart value=20
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=yansWifiPhy
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=qosWifiMac
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=wifiRemoteStationManager
+wifiRemoteStationManager attribute=RtsCtsThreshold value=2000
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=wifiRemoteStationManager
+wifiRemoteStationManager attribute=FragmentationThreshold value=2300
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=qosWifiMac
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=applications
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=application
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+Application itetrisName=serviceIdUnicast
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=PortC2C value=7090
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=PortIP value=7091
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=Frequency value=2
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=PacketSize value=300
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=application
+C2CIP application with itetrisName=serviceIdUnicast has been added to the ServiceListHelper
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=application
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+Application itetrisName=serviceIdTopobroadcast
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=PortC2C value=8083
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=PortIP value=8082
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=Frequency value=2
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=PacketSize value=300
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=application
+C2CIP application with itetrisName=serviceIdTopobroadcast has been added to the ServiceListHelper
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=application
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+Application itetrisName=serviceIdGeobroadcast
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=PortC2C value=9085
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=PortIP value=9084
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=Frequency value=2
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=PacketSize value=300
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=application
+C2CIP application with itetrisName=serviceIdGeobroadcast has been added to the ServiceListHelper
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=applications
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=waveVehicle
+Installer type=ns3::WaveRsuInstaller name=WaveRsu
+CONFIGURATION-MANAGER.XML calling Pathfile= ./ns-3_files/confWaveRsu.xml
+WAVE-INSTALLER: trying to read file from path = ./ns-3_files/confWaveRsu.xml
+Reading config file for WAVE
+Tag read in ConfigurationFile=waveVehicle
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=yansWifiPhy
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=wavePhyCCH
+wavePhyCch attribute=TxGain value=0.0
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=wavePhyCCH
+wavePhyCch attribute=RxGain value=0.0
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=wavePhyCCH
+wavePhyCch attribute=TxPowerLevels value=60
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=wavePhyCCH
+wavePhyCch attribute=TxPowerEnd value=33
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=wavePhyCCH
+wavePhyCch attribute=TxPowerStart value=20
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=#comment
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=wavePhySCH
+wavePhySch attribute=TxGain value=0.0
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=wavePhySCH
+wavePhySch attribute=RxGain value=0.0
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=wavePhySCH
+wavePhySch attribute=TxPowerLevels value=60
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=wavePhySCH
+wavePhySch attribute=TxPowerEnd value=33
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=wavePhySCH
+wavePhySch attribute=TxPowerStart value=20
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=yansWifiPhy
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=mobilityModel
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=antenna
+antenna attribute=AntennaHeight value=6
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=mobilityModel
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=applications
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=application
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+Application itetrisName=serviceIdUnicast
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=PortC2C value=7090
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=PortIP value=7091
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=Frequency value=2
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=PacketSize value=300
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=application
+C2CIP application with itetrisName=serviceIdUnicast has been added to the ServiceListHelper
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=application
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+Application itetrisName=serviceIdTopobroadcast
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=PortC2C value=8083
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=PortIP value=8082
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=Frequency value=2
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=PacketSize value=300
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=application
+C2CIP application with itetrisName=serviceIdTopobroadcast has been added to the ServiceListHelper
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=application
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+Application itetrisName=serviceIdGeobroadcast
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=PortC2C value=9085
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=PortIP value=9084
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=Frequency value=2
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=C2CIP
+C2CIP attribute=PacketSize value=300
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=application
+C2CIP application with itetrisName=serviceIdGeobroadcast has been added to the ServiceListHelper
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=applications
+Tag read in ConfigurationFile=#text
+Tag read in ConfigurationFile=waveVehicle
+Linking installers in WaveInstaller::RelateInstaller
+Installer WaveRsu will be related with installer WaveVehicle
+Installer type=ns3::UmtsBsInstaller name=UmtsBs
+CONFIGURATION-MANAGER.XML calling Pathfile= ./ns-3_files/confUmtsBs.xml
+Installer type=ns3::UmtsVehicleInstaller name=UmtsVehicle
+CONFIGURATION-MANAGER.XML calling Pathfile= ./ns-3_files/confUmtsVehicle.xml
+Installer type=ns3::WimaxBsInstaller name=WimaxBs
+CONFIGURATION-MANAGER.XML calling Pathfile= ./ns-3_files/confWimaxBs.xml
+Installer type=ns3::WimaxVehicleInstaller name=WimaxVehicle
+CONFIGURATION-MANAGER.XML calling Pathfile= ./ns-3_files/confWimaxVehicle.xml
+Installer type=ns3::DvbhVehicleInstaller name=DvbhVehicle
+CONFIGURATION-MANAGER.XML calling Pathfile= ./ns-3_files/confDvbhVehicle.xml
+Installer type=ns3::DvbhBsInstaller name=DvbhBs
+CONFIGURATION-MANAGER.XML calling Pathfile= ./ns-3_files/confDvbhBs.xml
+Installer type=ns3::TmcInstaller name=TMC
+'file' attribute has not been found for installer TMC
+Installer type=ns3::TmcInstaller name=TMC
+'file' attribute has not been found for installer TMC
+Installer type=ns3::ItetrisNetworkTransportInstaller name=NetTrans
+'file' attribute has not been found for installer NetTrans
+Installer NetTrans will be installed by default in every new node
+Installer type=ns3::MobilityModelInstaller name=Mobility
+'file' attribute has not been found for installer Mobility
+Installer Mobility will be installed by default in every new node
+Quitting (on unknown error).

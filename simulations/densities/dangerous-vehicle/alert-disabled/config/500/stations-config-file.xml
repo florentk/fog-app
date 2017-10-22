@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<stations>
+    <default>
+        <RATseed value="12345"/>
+        <mobileStas>
+	        <mobileSta RAT-type="0" penetration-rate="100"   communication-profile="WaveVehicle"/>  <!-- .11p -->
+	        <mobileSta RAT-type="1" penetration-rate="0"  communication-profile="UmtsVehicle"/>  <!-- UMTS -->
+	        <mobileSta RAT-type="2" penetration-rate="0"  communication-profile="WimaxVehicle"/> <!-- WiMAX -->
+	        <mobileSta RAT-type="3" penetration-rate="0" communication-profile="DvbVehicle"/>   <!-- DVB-H -->
+        </mobileStas>
+        <fixedStas> 
+	        <fixedSta id="65536" x="3000" y="40" RAT-type="0" enabledRAT="1" communication-profile="WaveRsu"/>
+	        <fixedSta id="65537" x="7000" y="40" RAT-type="0" enabledRAT="1" communication-profile="WaveRsu"/>
+        </fixedStas> 
+	
+        <predefStas>
+                <predefSta id="10000" tsId="dangerous_car" />
+        </predefStas>
+
+    </default>
+</stations>

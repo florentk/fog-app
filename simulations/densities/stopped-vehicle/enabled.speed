@@ -1,0 +1,15 @@
+alert-enabled/config/1000/log/sumo/netstate.dump
+2 31.5020871628
+
+alert-enabled/config/1500/log/sumo/netstate.dump
+2 31.3854060219
+
+alert-enabled/config/3000/log/sumo/netstate.dump
+0 31.3802957652
+
+alert-enabled/config/4500/log/sumo/netstate.dump
+13 31.2710082904
+
+alert-enabled/config/500/log/sumo/netstate.dump
+1 31.1139987366
+
