@@ -14,10 +14,12 @@ libtool
 *.dump
 *.log
 *.pdf
-simulations/densities*
-simulations/results*
+*.tgz
+simulations/tmp*
 config.guess
 config.status
 config.sub
 configure
 src/config.h
+simulations/densities/archives*
+simulations/densities/common/highway.*.sumo.cfg
