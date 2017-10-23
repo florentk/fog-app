@@ -13,7 +13,7 @@
 \begin{abstract}
 \end{abstract}
 
-\section*{Paramètres de simulations}
+\section{Paramètres de simulations}
 
 \begin{table}[!t]
 \label{tab:parametres}
@@ -47,6 +47,8 @@ Reduced speed & $20m/s$\\
 \hline
 Duration of Slowdown & $5s$\\
 \hline
+Security distance with dangerous vehicle & $100 m$\\
+\hline
 Vehicle densities & $500,1000,1500,2500 and 4500 $ vehicles per hour on each direction\\ 
 \hline
 Propagation loss & $46.5777dB$\\
@@ -66,10 +68,10 @@ Scenarios samples & 10 \\
 \end{center}
 \end{table}
 
-\section*{Metriques}
+\section{Metriques}
 
 
-\subsection*{TTC}
+\subsection{TTC}
 
 Time to Colision. Nous considérons que deux vehicule normal qui se suivent avec un $TTC < 3 s$  n'est pas en sécurité. Nous calculons alors deux métriques :
 
@@ -78,47 +80,227 @@ Time to Colision. Nous considérons que deux vehicule normal qui se suivent avec
  \item ``Part of time with TTC < 3 s'' : Compris entre 0 et 1. La part de temps passé  par tous les véhicules d'un scénario en situation non sécurité. C'est la métrique ci-dessus divisé par le temps total de la simulation afin de la normaliser. Plus elle faible, plus la route est sécurisée.
 \end{itemize}
 
-\subsection*{Reception rate}
+\subsection{Reception rate}
 
 Seulement pour les scénarios ``Fog alert'' en V2V ou V2I. C'est le nombre de véhicules entrant dans la zone de brouillard ayant recu l'alerte sur le nombre total de véhicules entrant dans la zone de brouillard. Une valeur éleve indique un bonne propagation des messages d'alertes.
 
-\subsection*{Duration}
+\subsection{Duration}
 
 Temps moyen en second nécessaire pour un véhicule pour parcourir les $10 km$ du tronçon. Une valeur élevée est prujudiciable pour l'utilisateur de la route.
 
-\subsection*{Emission}
+\subsection{Emission}
 
 Volume de CO2 en gramme emis par une classe de véhicules pendant le scénario. Le modèle utilisé pour calculer la metrique est basé sur le Handbook ``Emission Factors for Road Transport (HBEFA)''.
 
-\subsection*{Security distance}
+\subsection{Security distance}
 
 Utilisé pour le scénario ``Dangerous vehicle''. Nous considérons qu'un véhicule suivant à moins de $100 m$ un véhicule dangereux est en situation de non sécurité. Comme pour le TTC, nous calculons la part de temps passé par tous les véhicules d'un scénario en situation de non sécurité.
 
-\section*{Scenarios}
+\section{Scenarios}
 
-\subsection*{Baseline}
+\subsection{Baseline}
 
-Le scenarion ``baseline'' consiste à lancer la simulation avec SUMO seul sans ns-3. Cela permet d'obtenir les statistiques de base sur la dynamique des vehicules : TTC, durée des trajets et emissions.
+Le scenarion ``baseline'' consiste à lancer la simulation avec SUMO seul sans ns-3, ni iCS. Les véhicules ne régisent pas aux situations de dangers. Cela permet d'obtenir les statistiques de base sur la dynamique des vehicules : TTC, durée des trajets et emissions.
 
-\subsection*{V2V Fog alert}
+\subsection{V2V Fog alert}
 
+Une zone compris entre 4.5 km et 5.5 km est considéré comme dangereuse par la présence de brouillard. Un véhicule rentrant dans cette zone freine brusquement pour atteindre la vitesse réduite ($20 m/s$) et diffuse un message "Fog alert" à interval régulier ($5 s$) dans un rayon de 2 km avec un protocol à routage géographique. Le message est propagé dans la direction opposée au sens de ciculation. Lorsqu'un véhicule reçoit le message, il ralenti (pendant $5s$) pour atteindre la vitesse réduite.
 
-\subsection*{V2I Fog alert}
-
-\subsection*{Stopped vehicle}
-
-\subsection*{Dangerous vehicle}
+Lorsque l'alerte est désactivé, les véhicules freine quand même lorsqu'il arrive dans la zone de danger, contrairement à la ``base line'', mais n'envoi aucun message.
 
 
-description of implementation of dangerous and stopped
+\subsection{V2I Fog alert}
 
-\section*{Results}
+Identique au scénario précédent, mais ici le message n'est pas envoyé par un véhicule arrivant dans la zone dangereuse mais par des RSU. La RSU est placée à $2 km$ du centre de la zone dangereuse pour chaque sens de circulation (donc à $3 km$ et $7 km$)
+
+\subsection{Stopped vehicle}
+
+Un véhicule est accidenté ou en panne sur la voie droite. Nous le considérons comme un ``Stopped vehicle''. Ce véhicule est normal au départ du scénario mais freine brusquement à $5 km$, diffuse des messages d'alerte ``Stopped vehicle alert'' et reste arreté jusqu'a la fin du scénario. Un véhicule recevant le message d'alerte change pour la voie de gauche afin d'éviter le véhicule arreté sur la voie de droite. Les véhicules ne recevant pas le message peuvent être surpirs par le véhicule arreté et freiner brusqueent provoqant une situation dangereuse.
+
+\subsection{Dangerous vehicle}
+
+Une véhicule ciculant sur la route est considéré comme dangereux : transport de marchandises dangereuses, conduite dangereuse (line diviation), véhicule en mauvaise état ... Pour réduire les risques d'accident, nous considérons que les autres véhicules le suivant doit respecter une distance de sécurité de $100 m$. Le véhicule dangereux diffuse une message d'alerte ``Dangerous vehicle'' à interval régulier. Le véhicule qui reçoit le message et qui suit le véhicule dangereux sur la même voie change le parametre ``Tau'' à $5 s$ dans le modèle de SUMO. Cette valeur, par défaut à $1 s$, permet de définir la distance de sécurité à adopter avec le véhicule que le véhicule suit. 
+
+\section{Results}
+
+Pour tous les scénarios, nous effectuons les simulation en fesant varier la densité de véhicule de 500 à 4500 vehicules par heure. Pour chaque densité, nous effectuons la simulation à 10 reprise avec une ``seed'' différente pour SUMO. Nous obtenons donc 10 échantillons par densité.
+
+\subsection{Fog alert}
+
+La simulation est effectué sans la diffusion d'un message d'alerte, avec la diffussion par les véhicules (V2V) et avec la diffusion par le RSU (V2I). Ce qui donne quatre scénarii en comptant la ``baseline'' où il n'y a pas de zone de danger.
+
+Pour la metrique ``Cumul of time with TTC < 3 s'', nous voyons une très legère réduction en V2V et une réduction plus significative en V2V pour des densités à partir de $1500 v/h$. Par contre la baseline est sensiblment égale au scénario sans alerte, ce qui laisse penser que ici la diminution du risque d'accident est plus le résultat d'un ralentissement généralisés que le ralentissement avant d'arriver dans la zone dangereuse.
+
+Par contre, les résultats sont bien plus clairs présentés sous la metrique ``Part of time with TTC < 3 s''. À partir de $1000 v/h$, il y a une différence significative entre la baseline et le scénario sans alerte. Le scénrio V2V améliore légerement la sécurité, mais le résultat avec le V2I est plus significatif. Cela se confirme par le taux de réception (métrique ``Reception rate''), qui est meilleurs pour le V2I entre $500$ et $3000 v/h$ et identique à forte densité ($4500 v/h$).
+
+En contreparti, le temps de parcours (métrique ``Duration'') en est augmenté pour les trois type de véhicules, mais l'emission de CO2 est diminué pour les voitures, bien qu'un peu moins pour le camion avec densité de véhicules élevées. Ceci est ssans doute dû à un rejet de CO2 plus important lors de freinages/accelerations plus fréquentes.
+
+\begin{figure}
+    \begin{center}
+         \includegraphics[width=10cm]{fog_alert/TTC}
+    \end{center}
+  \caption{ Fog alert results : Cumul of time with TTC < 3 s for several densities }
+  \label{fig:ttc_part}
+\end{figure}
 
 \begin{figure}
     \begin{center}
          \includegraphics[width=10cm]{fog_alert/TTC_part}
+    \end{center}s
+  \caption{ Fog alert results : Part of time with TTC < 3 s for several densities}
+  \label{fig:ttc_part}
+\end{figure}
+
+\begin{figure}
+    \begin{center}
+         \includegraphics[width=10cm]{fog_alert/rate}
+    \end{center}s
+  \caption{ Fog alert results : Reception rate of alert for several densities}
+  \label{fig:ttc_part}
+\end{figure}
+
+
+\begin{figure}
+    \begin{center}
+         \includegraphics[width=10cm]{fog_alert/CO2-car1}
+    \end{center}s
+  \caption{ Fog alert results : CO2 emissions for standard car}
+  \label{fig:ttc_part}
+\end{figure}
+
+
+\begin{figure}
+    \begin{center}
+         \includegraphics[width=10cm]{fog_alert/CO2-car2}
+    \end{center}s
+  \caption{ Fog alert results : CO2 emissions for slow car}
+  \label{fig:ttc_part}
+\end{figure}
+
+
+\begin{figure}
+    \begin{center}
+         \includegraphics[width=10cm]{fog_alert/CO2-truck}
+    \end{center}s
+  \caption{ Fog alert results : CO2 emissions for truck}
+  \label{fig:ttc_part}
+\end{figure}
+
+\begin{figure}
+    \begin{center}
+         \includegraphics[width=10cm]{fog_alert/duration-car1}
+    \end{center}s
+  \caption{ Fog alert results : travel duration for standard car}
+  \label{fig:ttc_part}
+\end{figure}
+
+
+\begin{figure}
+    \begin{center}
+         \includegraphics[width=10cm]{fog_alert/duration-car2}
+    \end{center}s
+  \caption{ Fog alert results : travel duration for slow car}
+  \label{fig:ttc_part}
+\end{figure}
+
+
+\begin{figure}
+    \begin{center}
+         \includegraphics[width=10cm]{fog_alert/duration-truck}
+    \end{center}s
+  \caption{ Fog alert results : travel duration for truck}
+  \label{fig:ttc_part}
+\end{figure}
+
+
+
+\subsection{Stopped vehicle alert}
+
+\begin{figure}
+    \begin{center}
+         \includegraphics[width=10cm]{stopped-vehicle/TTC}
     \end{center}
-  \caption{ Fog alert results}
+  \caption{ Stopped vehicle alert results : Cumul of time with TTC < 3 s for several densities }
+  \label{fig:ttc_part}
+\end{figure}
+
+\begin{figure}
+    \begin{center}
+         \includegraphics[width=10cm]{stopped-vehicle/TTC_part}
+    \end{center}s
+  \caption{ Stopped vehicle alert results : Part of time with TTC < 3 s for several densities}
+  \label{fig:ttc_part}
+\end{figure}
+
+\begin{figure}
+    \begin{center}
+         \includegraphics[width=10cm]{stopped-vehicle/rate}
+    \end{center}s
+  \caption{ Fog alert results : Reception rate of alert for several densities}
+  \label{fig:ttc_part}
+\end{figure}
+
+
+\begin{figure}
+    \begin{center}
+         \includegraphics[width=10cm]{stopped-vehicle/CO2-car1}
+    \end{center}s
+  \caption{ Stopped vehicle alert results : CO2 emissions for standard car}
+  \label{fig:ttc_part}
+\end{figure}
+
+
+\begin{figure}
+    \begin{center}
+         \includegraphics[width=10cm]{stopped-vehicle/CO2-car2}
+    \end{center}s
+  \caption{ Stopped vehicle alert results : CO2 emissions for slow car}
+  \label{fig:ttc_part}
+\end{figure}
+
+
+\begin{figure}
+    \begin{center}
+         \includegraphics[width=10cm]{stopped-vehicle/CO2-truck}
+    \end{center}s
+  \caption{ Stopped vehicle alert results : CO2 emissions for truck}
+  \label{fig:ttc_part}
+\end{figure}
+
+\begin{figure}
+    \begin{center}
+         \includegraphics[width=10cm]{stopped-vehicle/duration-car1}
+    \end{center}s
+  \caption{ Fog alert results : travel duration for standard car}
+  \label{fig:ttc_part}
+\end{figure}
+
+
+\begin{figure}
+    \begin{center}
+         \includegraphics[width=10cm]{stopped-vehicle/duration-car2}
+    \end{center}s
+  \caption{ Stopped vehicle alert results : travel duration for slow car}
+  \label{fig:ttc_part}
+\end{figure}
+
+
+\begin{figure}
+    \begin{center}
+         \includegraphics[width=10cm]{stopped-vehicle/duration-truck}
+    \end{center}s
+  \caption{ Stopped vehicle alert results : travel duration for truck}
+  \label{fig:ttc_part}
+\end{figure}
+
+
+\subsection{Dangerous vehicle alert}
+
+\begin{figure}
+    \begin{center}
+         \includegraphics[width=10cm]{dangerous-vehicle/dist_part}
+    \end{center}
+  \caption{ Dangerous vehicle alert results : Regard of security distance for several densities }
   \label{fig:ttc_part}
 \end{figure}
 
